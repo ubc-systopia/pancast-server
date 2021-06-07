@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"pancast-server/routes"
 	serverutils "pancast-server/server-utils"
 )
 
@@ -15,8 +16,8 @@ type Env struct {
 	db *sql.DB
 }
 
-func basic(res http.ResponseWriter, req *http.Request) {
-	serverutils.Write(res, "Welcome")
+func basic(w http.ResponseWriter, req *http.Request) {
+	serverutils.Write(w, "Welcome")
 }
 
 func StartServer(address string) {
@@ -45,14 +46,20 @@ func StartServer(address string) {
 	}
 }
 
-func (env *Env) registerNewDeviceIndex(res http.ResponseWriter, req *http.Request) {
-
+func (env *Env) registerNewDeviceIndex(w http.ResponseWriter, req *http.Request) {
+	params, err := routes.RegisterController(0, env.db)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		output, _ := params.ConvertToJSONString()
+		serverutils.Write(w, output)
+	}
 }
 
-func (env *Env) uploadRiskEncountersIndex(res http.ResponseWriter, req *http.Request) {
-
+func (env *Env) uploadRiskEncountersIndex(w http.ResponseWriter, req *http.Request) {
+	// TODO: implement
 }
 
-func (env *Env) updateRiskAssessmentIndex(res http.ResponseWriter, req *http.Request) {
-
+func (env *Env) updateRiskAssessmentIndex(w http.ResponseWriter, req *http.Request) {
+	// TODO: implement
 }

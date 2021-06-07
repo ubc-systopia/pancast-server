@@ -2,6 +2,6 @@ package routes
 
 import "database/sql"
 
-func UploadController(db *sql.DB) {
+func UpdateController(db *sql.DB) {
 
 }
