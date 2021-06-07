@@ -32,4 +32,3 @@ func Write(res http.ResponseWriter, output string) {
 func ConcatPublicKey(N *big.Int, E int) string {
 	return N.String() + "|" + strconv.Itoa(E)
 }
-

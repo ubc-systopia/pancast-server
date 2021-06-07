@@ -1,7 +1,8 @@
-package server
+package database
 
 import (
 	"database/sql"
+	"flag"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
 	"log"
@@ -9,7 +10,7 @@ import (
 )
 
 func InitDatabaseConnection() *sql.DB {
-	if err := godotenv.Load(); err != nil {
+	if err := loadEnvironmentVariables(); err != nil {
 		log.Fatal(err)
 	}
 	accessParams := os.Getenv("DB_USER") + ":" + os.Getenv("DB_PASSWD") +
@@ -24,4 +25,17 @@ func InitDatabaseConnection() *sql.DB {
 		log.Fatal(err)
 	}
 	return db
+}
+
+func loadEnvironmentVariables() error {
+	var err error
+	if flag.Lookup("test.v") == nil {
+		err = godotenv.Load()
+	} else {
+		err = godotenv.Load("./../.env")
+	}
+	if err != nil {
+		return err
+	}
+	return nil
 }

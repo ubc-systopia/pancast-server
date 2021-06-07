@@ -1,15 +1,16 @@
 package server
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"pancast-server/database"
 	"pancast-server/routes"
 	serverutils "pancast-server/server-utils"
+	"strconv"
 )
 
 type Env struct {
@@ -20,8 +21,8 @@ func basic(w http.ResponseWriter, req *http.Request) {
 	serverutils.Write(w, "Welcome")
 }
 
-func StartServer(address string) {
-	db := InitDatabaseConnection()
+func StartServer(address string) (*http.Server, chan os.Signal) {
+	db := database.InitDatabaseConnection()
 	defer db.Close()
 	env := &Env{db: db}
 	http.HandleFunc("/", basic)
@@ -37,17 +38,15 @@ func StartServer(address string) {
 			log.Fatal(err)
 		}
 	}()
-
-	<-done
-	fmt.Println("\nShutting down...")
-	err := server.Shutdown(context.Background())
-	if err != nil {
-		panic(err)
-	}
+	return server, done
 }
 
 func (env *Env) registerNewDeviceIndex(w http.ResponseWriter, req *http.Request) {
-	params, err := routes.RegisterController(0, env.db)
+	deviceType, err := strconv.ParseInt(req.FormValue("type"), 10, 32)
+	if err != nil || isValidType(deviceType) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	params, err := routes.RegisterController(deviceType, env.db)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	} else {
@@ -56,8 +55,13 @@ func (env *Env) registerNewDeviceIndex(w http.ResponseWriter, req *http.Request)
 	}
 }
 
+func isValidType(deviceType int64) bool {
+	return deviceType != DONGLE && deviceType != BEACON
+}
+
 func (env *Env) uploadRiskEncountersIndex(w http.ResponseWriter, req *http.Request) {
 	// TODO: implement
+
 }
 
 func (env *Env) updateRiskAssessmentIndex(w http.ResponseWriter, req *http.Request) {

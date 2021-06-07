@@ -9,6 +9,8 @@ import (
 	"io/ioutil"
 	"log"
 	"math/big"
+	"os"
+	"strconv"
 )
 
 type RegistrationParameters struct {
@@ -25,24 +27,30 @@ type PublicKey struct {
 	E int
 }
 
-func RegisterController(deviceType int, db *sql.DB) (RegistrationParameters, error) {
-	// 1. The backend's public key
-	// 2. The device ID
-	// 3. Initial clock value
-	// 4. Secret key
+func RegisterController(deviceType int64, db *sql.DB) (RegistrationParameters, error) {
+	// Get server's public key from certificate?
+	// Client must authenticate with server that it is legit
+	// Not complete yet
+	var output RegistrationParameters
+	//key, err := getPublicKey()
+	//if err != nil {
+	//	return RegistrationParameters{}, err
+	//}
+	n := new(big.Int)
+	n, _ = n.SetString(os.Getenv("PUBLIC_N"), 10)
+	e, _ := strconv.Atoi(os.Getenv("PUBLIC_E"))
+	key := PublicKey{
+		N: n,
+		E: e,
+	}
+	output.ServerKey = key
 
-	// if it is a beacon, we will give it:
-	// 1.
+	// TODO: Compute current clock offset
 
-	// obtain public key of server
-	// TODO: Compute a secret key to give to a beacon
+	// TODO: Create secret AES key
 
-	// insert device into database
-
-	// handle registration logic
-	// tons of crypto
-	// maybe some database access
-	return RegistrationParameters{}, nil
+	// TODO: Create device in database
+	return output, nil
 }
 
 // adapted from https://stackoverflow.com/questions/33031658/getting-rsa-public-key-from-certificate-in-golang
