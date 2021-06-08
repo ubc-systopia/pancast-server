@@ -3,6 +3,7 @@ package server
 import (
 	"database/sql"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -23,7 +24,6 @@ func basic(w http.ResponseWriter, req *http.Request) {
 
 func StartServer(address string) (*http.Server, chan os.Signal) {
 	db := database.InitDatabaseConnection()
-	defer db.Close()
 	env := &Env{db: db}
 	http.HandleFunc("/", basic)
 	http.HandleFunc("/register", env.registerNewDeviceIndex)
@@ -43,7 +43,7 @@ func StartServer(address string) (*http.Server, chan os.Signal) {
 
 func (env *Env) registerNewDeviceIndex(w http.ResponseWriter, req *http.Request) {
 	deviceType, err := strconv.ParseInt(req.FormValue("type"), 10, 32)
-	if err != nil || isValidType(deviceType) {
+	if err != nil || !isValidType(deviceType) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 	params, err := routes.RegisterController(deviceType, env.db)
@@ -56,12 +56,37 @@ func (env *Env) registerNewDeviceIndex(w http.ResponseWriter, req *http.Request)
 }
 
 func isValidType(deviceType int64) bool {
-	return deviceType != DONGLE && deviceType != BEACON
+	return deviceType == serverutils.DONGLE || deviceType == serverutils.BEACON
 }
 
 func (env *Env) uploadRiskEncountersIndex(w http.ResponseWriter, req *http.Request) {
-	// TODO: implement
+	body, errBody := ioutil.ReadAll(req.Body)
+	if errBody != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	input := routes.ConvertStringToUploadParam(body)
+	if !isValidDatabase(input.Type) {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	if input.Type == 0 && !hasPermissionToUploadToRiskDatabase() {
+		w.WriteHeader(http.StatusForbidden)
+	} else {
+		err := routes.UploadController(input, env.db)
+		if err != nil {
+			w.WriteHeader(http.StatusBadGateway)
+		} else {
+			serverutils.Write(w, "Success!")
+		}
+	}
+}
 
+func isValidDatabase(databaseType int64) bool {
+	return databaseType == serverutils.RISK || databaseType == serverutils.EPI
+}
+
+func hasPermissionToUploadToRiskDatabase() bool {
+	// TODO: implement
+	return true
 }
 
 func (env *Env) updateRiskAssessmentIndex(w http.ResponseWriter, req *http.Request) {

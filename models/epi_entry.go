@@ -3,32 +3,31 @@ package models
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
+	"pancast-server/types"
 )
 
-type EpiEntry struct {
-	EphemeralID []byte
-	DongleClock uint64
-	BeaconClock uint64
-	BeaconID    uint64
-	LocationID  string
-}
-
-func CreateEpiEntry(input EpiEntry, db *sql.DB) {
+func CreateEpiEntries(input []types.Entry, db *sql.DB) bool {
 	ctx := context.Background()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
-	query := "INSERT INTO epi_entries VALUES (?, ?, ?, ?, ?)"
-	_, err = tx.ExecContext(ctx, query, input.EphemeralID, input.LocationID, input.DongleClock,
-		input.BeaconClock, input.BeaconID)
+	query := "INSERT INTO epi_entries VALUES %s;"
+	values := types.ConcatEntries(input)
+	statement := fmt.Sprintf(query, values)
+	_, err = tx.ExecContext(ctx, statement)
 	if err != nil {
-		tx.Rollback()
-		return
+		_ = tx.Rollback()
+		log.Println(err)
+		return false
 	}
 	err = tx.Commit()
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
+		return false
 	}
+	return true
 }
+
