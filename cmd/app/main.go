@@ -16,7 +16,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	srv, done := server.StartServer(config.GetServerURL(conf))
+	srv, _, done := server.StartServer(config.GetServerURL(conf))
 	<-done
 	fmt.Println("\nShutting down...")
 	err = srv.Shutdown(context.Background())
