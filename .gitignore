@@ -1,4 +1,4 @@
-app
+/app
 pancast.cert
 pancast.key
 .env
