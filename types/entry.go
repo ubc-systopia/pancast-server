@@ -27,5 +27,5 @@ func ConcatEntries(input []Entry) string {
 
 func createEntries(input Entry) string {
 	return fmt.Sprintf("('%s', '%s', %d, %d, %d)", input.EphemeralID, input.LocationID,
-		input.DongleClock, input.BeaconClock, input.BeaconID, )
+		input.DongleClock, input.BeaconClock, input.BeaconID)
 }

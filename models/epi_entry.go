@@ -30,4 +30,3 @@ func CreateEpiEntries(input []types.Entry, db *sql.DB) bool {
 	}
 	return true
 }
-

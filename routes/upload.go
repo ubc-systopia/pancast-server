@@ -49,7 +49,7 @@ const (
 	ALPHABETIC   = 0
 	NUMERIC      = 1
 	ALPHANUMERIC = 2
-	SPECIAL = 3
+	SPECIAL      = 3
 )
 
 func checkInputType(input string, inputType int) bool {
