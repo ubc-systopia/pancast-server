@@ -1,9 +1,16 @@
-package server
+package config
 
 import (
 	"encoding/json"
 	"io/ioutil"
 )
+
+type StartParameters struct {
+	Address        string
+	Port           string
+	CertificateLoc string
+	PrivateKeyLoc  string
+}
 
 func ReadJSONConfig(filename string, config interface{}) error {
 	configData, err := ioutil.ReadFile(filename)
@@ -15,4 +22,8 @@ func ReadJSONConfig(filename string, config interface{}) error {
 		return err
 	}
 	return nil
+}
+
+func GetServerURL(conf StartParameters) string {
+	return conf.Address + ":" + conf.Port
 }

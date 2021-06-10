@@ -1,32 +1,34 @@
 package server
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
+	"pancast-server/database"
+	"pancast-server/routes"
 	serverutils "pancast-server/server-utils"
+	"strconv"
 )
 
 type Env struct {
 	db *sql.DB
 }
 
-func basic(res http.ResponseWriter, req *http.Request) {
-	serverutils.Write(res, "Welcome")
+func basic(w http.ResponseWriter, req *http.Request) {
+	serverutils.Write(w, "Welcome")
 }
 
-func StartServer(address string) {
-	db := InitDatabaseConnection()
-	defer db.Close()
+func StartServer(address string) (*http.Server, *Env, chan os.Signal) {
+	db := database.InitDatabaseConnection()
 	env := &Env{db: db}
 	http.HandleFunc("/", basic)
-	http.HandleFunc("/register", env.registerNewDeviceIndex)
-	http.HandleFunc("/upload", env.uploadRiskEncountersIndex)
-	http.HandleFunc("/update", env.updateRiskAssessmentIndex)
+	http.HandleFunc("/register", env.RegisterNewDeviceIndex)
+	http.HandleFunc("/upload", env.UploadRiskEncountersIndex)
+	http.HandleFunc("/update", env.UpdateRiskAssessmentIndex)
 	server := &http.Server{Addr: address}
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt)
@@ -36,23 +38,57 @@ func StartServer(address string) {
 			log.Fatal(err)
 		}
 	}()
+	return server, env, done
+}
 
-	<-done
-	fmt.Println("\nShutting down...")
-	err := server.Shutdown(context.Background())
+func (env *Env) RegisterNewDeviceIndex(w http.ResponseWriter, req *http.Request) {
+	deviceType, err := strconv.ParseInt(req.FormValue("type"), 10, 32)
+	if err != nil || !isValidType(deviceType) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}
+	params, err := routes.RegisterController(deviceType, env.db)
 	if err != nil {
-		panic(err)
+		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		output, _ := params.ConvertToJSONString()
+		serverutils.Write(w, output)
 	}
 }
 
-func (env *Env) registerNewDeviceIndex(res http.ResponseWriter, req *http.Request) {
-
+func isValidType(deviceType int64) bool {
+	return deviceType == serverutils.DONGLE || deviceType == serverutils.BEACON
 }
 
-func (env *Env) uploadRiskEncountersIndex(res http.ResponseWriter, req *http.Request) {
-
+func (env *Env) UploadRiskEncountersIndex(w http.ResponseWriter, req *http.Request) {
+	body, errBody := ioutil.ReadAll(req.Body)
+	if errBody != nil {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	input := routes.ConvertStringToUploadParam(body)
+	if !isValidDatabase(input.Type) {
+		w.WriteHeader(http.StatusBadRequest)
+	}
+	if input.Type == 0 && !hasPermissionToUploadToRiskDatabase() {
+		w.WriteHeader(http.StatusForbidden)
+	} else {
+		err := routes.UploadController(input, env.db)
+		if err != nil {
+			w.WriteHeader(http.StatusBadGateway)
+		} else {
+			serverutils.Write(w, "Success!")
+		}
+	}
 }
 
-func (env *Env) updateRiskAssessmentIndex(res http.ResponseWriter, req *http.Request) {
+func isValidDatabase(databaseType int64) bool {
+	return databaseType == serverutils.RISK || databaseType == serverutils.EPI
+}
 
+func hasPermissionToUploadToRiskDatabase() bool {
+	// TODO: implement
+	return true
+}
+
+func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Request) {
+	// TODO: implement
 }
