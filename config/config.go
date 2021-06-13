@@ -10,6 +10,7 @@ type StartParameters struct {
 	Port           string
 	CertificateLoc string
 	PrivateKeyLoc  string
+	PublicKeyLoc   string
 }
 
 func ReadJSONConfig(filename string, config interface{}) error {
