@@ -1,5 +1,5 @@
 /app
-../reverse-proxy/pancast.cert
-../reverse-proxy/pancast.key
+pancast.key
+pancast.cert
 .env
-../reverse-proxy/pancast.pubkey
+pancast.pubkey
