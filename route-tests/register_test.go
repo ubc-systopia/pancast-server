@@ -1,32 +1,16 @@
 package route_tests
 
 import (
-	"context"
-	"log"
 	"net/http"
 	"net/http/httptest"
-	server "pancast-server"
-	"pancast-server/config"
 	"testing"
 )
 
-func setupRegister() (*http.Server, *server.Env, config.StartParameters) {
-	var conf config.StartParameters
-	err := config.ReadJSONConfig("config/app_config.json", &conf)
-	if err != nil {
-		log.Fatal(err)
-	}
-	srv, env, _ := server.StartServer(config.GetServerURL(conf))
-	return srv, env, conf
-}
 
-func teardownRegister(srv *http.Server) {
-	_ = srv.Shutdown(context.Background())
-}
 
 // all tests fall under TestRegistration
 func TestRegistration(t *testing.T) {
-	srv, env, conf := setupRegister()
+	srv, env, conf := SetupServer()
 
 	t.Run(
 		"registration_test_basic",
@@ -54,5 +38,5 @@ func TestRegistration(t *testing.T) {
 		},
 	)
 
-	teardownRegister(srv)
+	TeardownServer(srv)
 }

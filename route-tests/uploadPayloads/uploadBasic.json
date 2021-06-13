@@ -1,0 +1,12 @@
+{
+  "Entries":[
+    {
+      "EphemeralID":"deadbeefdeadbee",
+      "DongleClock":0,
+      "BeaconClock":0,
+      "BeaconID":1,
+      "LocationID":"LOC00001"
+    }
+  ],
+  "Type":0
+}
