@@ -8,15 +8,13 @@ import (
 	"pancast-server/config"
 )
 
-
-
 func main() {
 	var conf config.StartParameters
 	err := config.ReadJSONConfig("config/app_config.json", &conf)
 	if err != nil {
 		log.Fatal(err)
 	}
-	srv, _, done := server.StartServer(config.GetServerURL(conf))
+	srv, _, done := server.StartServer(conf)
 	<-done
 	fmt.Println("\nShutting down...")
 	err = srv.Shutdown(context.Background())

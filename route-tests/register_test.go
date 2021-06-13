@@ -6,8 +6,6 @@ import (
 	"testing"
 )
 
-
-
 // all tests fall under TestRegistration
 func TestRegistration(t *testing.T) {
 	srv, env, conf := SetupServer()
@@ -15,7 +13,7 @@ func TestRegistration(t *testing.T) {
 	t.Run(
 		"registration_test_basic",
 		func(t *testing.T) {
-			req, err :=http.NewRequest("POST", GetServerRoute("/register", conf), nil)
+			req, err := http.NewRequest("POST", GetServerRoute("/register", conf), nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -24,19 +22,8 @@ func TestRegistration(t *testing.T) {
 		},
 	)
 
-	t.Run(
-		"registration_test_less_basic",
-		func(t *testing.T) {
-
-		},
-	)
-
-	t.Run(
-		"registration_test_least_basic",
-		func(t *testing.T) {
-
-		},
-	)
-
-	TeardownServer(srv)
+	err := TeardownServer(srv)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

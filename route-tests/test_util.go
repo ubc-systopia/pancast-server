@@ -23,14 +23,18 @@ func ReadJSONPayload(path string) (string, error) {
 
 func SetupServer() (*http.Server, *server.Env, config.StartParameters) {
 	var conf config.StartParameters
-	err := config.ReadJSONConfig("../config/app_config.json", &conf)
+	err := config.ReadJSONConfig("../config/test_app_config.json", &conf)
 	if err != nil {
 		log.Fatal(err)
 	}
-	srv, env, _ := server.StartServer(config.GetServerURL(conf))
+	srv, env, _ := server.StartServer(conf)
 	return srv, env, conf
 }
 
-func TeardownServer(srv *http.Server) {
-	_ = srv.Shutdown(context.Background())
+func TeardownServer(srv *http.Server) error {
+	err := srv.Shutdown(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
 }

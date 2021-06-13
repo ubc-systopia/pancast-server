@@ -1,7 +1,10 @@
 package routes
 
-import "database/sql"
+import (
+	"database/sql"
+)
 
-func UpdateController(db *sql.DB) {
-
+func UpdateController(db *sql.DB) []byte {
+	ba := []byte{0, 0, 0, 0}
+	return ba
 }

@@ -17,7 +17,7 @@ func TestUpload(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			req, err :=http.NewRequest("POST", GetServerRoute("/upload", conf), strings.NewReader(payload))
+			req, err := http.NewRequest("POST", GetServerRoute("/upload", conf), strings.NewReader(payload))
 			if err != nil {
 				t.Fatal(err)
 			}

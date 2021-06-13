@@ -1,20 +1,14 @@
 package routes
 
 import (
-	"crypto/rsa"
-	"crypto/x509"
 	"database/sql"
 	"encoding/json"
-	"encoding/pem"
 	"io/ioutil"
 	"log"
-	"math/big"
-	"os"
-	"strconv"
 )
 
 type RegistrationParameters struct {
-	ServerKey  PublicKey
+	ServerKey  string
 	DeviceID   uint64
 	Clock      uint64
 	Secret     string
@@ -22,28 +16,13 @@ type RegistrationParameters struct {
 	LocationID string
 }
 
-type PublicKey struct {
-	N *big.Int
-	E int
-}
-
-func RegisterController(deviceType int64, db *sql.DB) (RegistrationParameters, error) {
-	// Get server's public key from certificate?
-	// Client must authenticate with server that it is legit
-	// Not complete yet
+func RegisterController(deviceType int64, keyLoc string, db *sql.DB) (RegistrationParameters, error) {
 	var output RegistrationParameters
-	//key, err := getPublicKey()
-	//if err != nil {
-	//	return RegistrationParameters{}, err
-	//}
-	n := new(big.Int)
-	n, _ = n.SetString(os.Getenv("PUBLIC_N"), 10)
-	e, _ := strconv.Atoi(os.Getenv("PUBLIC_E"))
-	key := PublicKey{
-		N: n,
-		E: e,
+	key, err := ioutil.ReadFile(keyLoc)
+	if err != nil {
+		return RegistrationParameters{}, err
 	}
-	output.ServerKey = key
+	output.ServerKey = string(key)
 
 	// TODO: Compute current clock offset
 
@@ -54,21 +33,29 @@ func RegisterController(deviceType int64, db *sql.DB) (RegistrationParameters, e
 }
 
 // adapted from https://stackoverflow.com/questions/33031658/getting-rsa-public-key-from-certificate-in-golang
-func getPublicKey() (PublicKey, error) {
-	certBytes, err := ioutil.ReadFile("pancast.cert")
-	if err != nil {
-		log.Fatal(err)
-		return PublicKey{}, err
-	}
-	certBlock, _ := pem.Decode(certBytes)
-	cert, err := x509.ParseCertificate(certBlock.Bytes)
-	if err != nil {
-		log.Fatal(err)
-		return PublicKey{}, err
-	}
-	certKey := cert.PublicKey.(*rsa.PublicKey)
-	return PublicKey{certKey.N, certKey.E}, nil
+//func getPublicKey() (PublicKey, error) { // no need to do this, just generate a public key using cmd tools
+//	certBytes, err := ioutil.ReadFile("pancast.cert")
+//	if err != nil {
+//		log.Fatal(err)
+//		return PublicKey{}, err
+//	}
+//	certBlock, _ := pem.Decode(certBytes)
+//	cert, err := x509.ParseCertificate(certBlock.Bytes)
+//	if err != nil {
+//		log.Fatal(err)
+//		return PublicKey{}, err
+//	}
+//	certKey := cert.PublicKey.(*rsa.PublicKey)
+//	return PublicKey{certKey.N, certKey.E}, nil
+//
+//}
 
+func getPublicKey() (string, error) {
+	pubkey, err := ioutil.ReadFile("pancast.pubkey")
+	if err != nil {
+		return "", err
+	}
+	return string(pubkey), nil
 }
 
 func (r *RegistrationParameters) ConvertToJSONString() (string, error) {

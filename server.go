@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"pancast-server/config"
 	"pancast-server/database"
 	"pancast-server/routes"
 	serverutils "pancast-server/server-utils"
@@ -15,26 +16,35 @@ import (
 )
 
 type Env struct {
-	db *sql.DB
+	db             *sql.DB
+	certificateLoc string
+	privateKeyLoc  string
+	publicKeyLoc   string
 }
 
 func basic(w http.ResponseWriter, req *http.Request) {
 	serverutils.Write(w, "Welcome")
 }
 
-func StartServer(address string) (*http.Server, *Env, chan os.Signal) {
+func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signal) {
 	db := database.InitDatabaseConnection()
-	env := &Env{db: db}
+	serverURL := config.GetServerURL(conf)
+	env := &Env{
+		db:             db,
+		certificateLoc: conf.CertificateLoc,
+		privateKeyLoc:  conf.PrivateKeyLoc,
+		publicKeyLoc:   conf.PublicKeyLoc,
+	}
 	http.HandleFunc("/", basic)
 	http.HandleFunc("/register", env.RegisterNewDeviceIndex)
 	http.HandleFunc("/upload", env.UploadRiskEncountersIndex)
 	http.HandleFunc("/update", env.UpdateRiskAssessmentIndex)
-	server := &http.Server{Addr: address}
+	server := &http.Server{Addr: serverURL}
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt)
 	go func() {
-		fmt.Println("Listening on address: " + address)
-		if err := http.ListenAndServeTLS(address, "pancast.cert", "pancast.key", nil); err != nil {
+		fmt.Println("Listening on address: " + serverURL)
+		if err := http.ListenAndServeTLS(serverURL, env.certificateLoc, env.privateKeyLoc, nil); err != nil {
 			log.Fatal(err)
 		}
 	}()
@@ -46,7 +56,7 @@ func (env *Env) RegisterNewDeviceIndex(w http.ResponseWriter, req *http.Request)
 	if err != nil || !isValidType(deviceType) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
-	params, err := routes.RegisterController(deviceType, env.db)
+	params, err := routes.RegisterController(deviceType, env.publicKeyLoc, env.db)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	} else {
@@ -91,4 +101,10 @@ func hasPermissionToUploadToRiskDatabase() bool {
 
 func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Request) {
 	// TODO: implement
+	ba := routes.UpdateController(env.db)
+	code, err := w.Write(ba)
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println(code)
 }
