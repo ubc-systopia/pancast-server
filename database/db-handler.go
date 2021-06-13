@@ -14,7 +14,7 @@ func InitDatabaseConnection() *sql.DB {
 		log.Fatal(err)
 	}
 	accessParams := os.Getenv("DB_USER") + ":" + os.Getenv("DB_PASSWD") +
-		"@tcp(localhost:3306)/" + os.Getenv("DB_NAME")
+		"@tcp(" + os.Getenv("DB_ADDR") + ":" + os.Getenv("DB_PORT") + ")/" + os.Getenv("DB_NAME")
 	db, err := sql.Open("mysql", accessParams)
 	if err != nil {
 		log.Fatal(err)
