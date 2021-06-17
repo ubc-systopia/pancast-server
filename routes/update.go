@@ -2,9 +2,10 @@ package routes
 
 import (
 	"database/sql"
+	cuckoo "github.com/panmari/cuckoofilter"
 )
 
-func UpdateController(db *sql.DB) []byte {
-	ba := []byte{0, 0, 0, 0}
-	return ba
+func UpdateController(cf *cuckoo.Filter, db *sql.DB) []byte {
+	// nothing complicated here :)
+	return cf.Encode()
 }

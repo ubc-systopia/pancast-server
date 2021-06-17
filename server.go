@@ -3,6 +3,7 @@ package server
 import (
 	"database/sql"
 	"fmt"
+	cuckoo "github.com/panmari/cuckoofilter"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 
 type Env struct {
 	db             *sql.DB
+	cf             *cuckoo.Filter
 	certificateLoc string
 	privateKeyLoc  string
 	publicKeyLoc   string
@@ -31,6 +33,7 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	serverURL := config.GetServerURL(conf)
 	env := &Env{
 		db:             db,
+		cf:             serverutils.PopulateCuckooFilter(db),
 		certificateLoc: conf.CertificateLoc,
 		privateKeyLoc:  conf.PrivateKeyLoc,
 		publicKeyLoc:   conf.PublicKeyLoc,
@@ -81,7 +84,7 @@ func (env *Env) UploadRiskEncountersIndex(w http.ResponseWriter, req *http.Reque
 	if input.Type == 0 && !hasPermissionToUploadToRiskDatabase() {
 		w.WriteHeader(http.StatusForbidden)
 	} else {
-		err := routes.UploadController(input, env.db)
+		err := routes.UploadController(input, env.cf, env.db)
 		if err != nil {
 			w.WriteHeader(http.StatusBadGateway)
 		} else {
@@ -101,7 +104,7 @@ func hasPermissionToUploadToRiskDatabase() bool {
 
 func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Request) {
 	// TODO: implement
-	ba := routes.UpdateController(env.db)
+	ba := routes.UpdateController(env.cf, env.db)
 	code, err := w.Write(ba)
 	if err != nil {
 		log.Println(err)

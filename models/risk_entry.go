@@ -29,3 +29,11 @@ func CreateRiskEntries(input []types.Entry, db *sql.DB) bool {
 	}
 	return true
 }
+
+func GetRiskEphIDs(db *sql.DB) *sql.Rows {
+	rows, err := db.Query("SELECT eph_id FROM risk_entries;")
+	if err != nil {
+		log.Fatal(err)
+	}
+	return rows
+}
