@@ -1,32 +1,50 @@
 package routes
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"pancast-server/models"
+	"time"
 )
 
 type RegistrationParameters struct {
 	ServerKey  string
-	DeviceID   uint64
-	Clock      uint64
-	Secret     string
+	DeviceID   uint32
+	Clock      uint32
+	Secret     []byte
 	OTPs       []string
 	LocationID string
 }
 
 func RegisterController(deviceType int64, keyLoc string, db *sql.DB) (RegistrationParameters, error) {
 	var output RegistrationParameters
+	// get public key
 	key, err := ioutil.ReadFile(keyLoc)
 	if err != nil {
 		return RegistrationParameters{}, err
 	}
 	output.ServerKey = string(key)
 
-	// TODO: Compute current clock offset
+	// compute current time
+	output.Clock = GetCurrentMinuteStamp()
 
-	// TODO: Create secret AES key
+	// using the AES-256 standard, where keys have 32 bytes
+	aesKey, err := GenerateRandomByteString(32)
+	if err != nil {
+		return RegistrationParameters{}, err
+	}
+	output.Secret = aesKey
+
+	// compute available device ID
+	id, err := models.GetLowestAvailableDeviceID(db)
+	log.Println(err)
+	if err != nil {
+		return RegistrationParameters{}, err
+	}
+	output.DeviceID = id
 
 	// TODO: Create device in database
 	return output, nil
@@ -49,6 +67,20 @@ func RegisterController(deviceType int64, keyLoc string, db *sql.DB) (Registrati
 //	return PublicKey{certKey.N, certKey.E}, nil
 //
 //}
+
+
+func GetCurrentMinuteStamp() uint32 {
+	return uint32(time.Now().UnixNano() / int64(time.Minute))
+}
+
+func GenerateRandomByteString(n int) ([]byte, error) {
+	key := make([]byte, n)
+	_, err := rand.Read(key)
+	if err != nil {
+		return key, err
+	}
+	return key, nil
+}
 
 func getPublicKey() (string, error) {
 	pubkey, err := ioutil.ReadFile("pancast.pubkey")
