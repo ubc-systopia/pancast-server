@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"pancast-server/types"
 )
 
 type Device struct {
@@ -13,23 +14,13 @@ type Device struct {
 	ClockOffset int
 }
 
-type Beacon struct {
-	Self       Device
-	LocationID []byte
-}
-
-type Dongle struct {
-	Self Device
-	OTPs [][]byte
-}
-
-func CreateDevice(deviceType int, db *sql.DB) {
-	ctx := context.Background()
-	_, err := db.BeginTx(ctx, nil)
+func CreateDevice(r types.RegistrationData, tx *sql.Tx, ctx context.Context) error {
+	query := "INSERT INTO device VALUES (?,?,?,?)"
+	_, err := tx.ExecContext(ctx, query, r.DeviceID, r.Secret, r.Clock, 0)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	_ = "INSERT INTO device VALUES "
+	return nil
 }
 
 func GetLowestAvailableDeviceID(db *sql.DB) (uint32, error) {
@@ -47,10 +38,14 @@ func GetLowestAvailableDeviceID(db *sql.DB) (uint32, error) {
 		}
 		freeArr = append(freeArr, candidate)
 	}
+	log.Println(freeArr)
 	for idx, el := range freeArr {
-		if el > uint32(idx) + 1 {
-			return uint32(idx) + 1, nil
+		if el > uint32(idx) {
+			return uint32(idx), nil
 		}
 	}
-	return 0, err
+	if len(freeArr) < 1E10 {
+		return uint32(len(freeArr)), nil
+	}
+	return 0, err // too many devices
 }

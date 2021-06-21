@@ -62,6 +62,7 @@ func (env *Env) RegisterNewDeviceIndex(w http.ResponseWriter, req *http.Request)
 	params, err := routes.RegisterController(deviceType, env.publicKeyLoc, env.db)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		log.Println(err.Error())
 	} else {
 		output, _ := params.ConvertToJSONString()
 		serverutils.Write(w, output)

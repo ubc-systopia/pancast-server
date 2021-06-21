@@ -2,7 +2,6 @@ package types
 
 import (
 	"fmt"
-	"log"
 )
 
 type Entry struct {
@@ -21,7 +20,6 @@ func ConcatEntries(input []Entry) string {
 			output += ","
 		}
 	}
-	log.Println(output)
 	return output
 }
 
