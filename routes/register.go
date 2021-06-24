@@ -1,12 +1,16 @@
 package routes
 
 import (
+	"context"
 	"crypto/rand"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"log"
 	"pancast-server/models"
+	server_utils "pancast-server/server-utils"
+	"pancast-server/types"
 	"time"
 )
 
@@ -21,6 +25,13 @@ type RegistrationParameters struct {
 
 func RegisterController(deviceType int64, keyLoc string, db *sql.DB) (RegistrationParameters, error) {
 	var output RegistrationParameters
+	// temporary placeholder for location
+	tempBeaconLocation := "LOCATION"
+	output.LocationID = tempBeaconLocation
+
+	// temporary placeholder for OTPs
+	output.OTPs = []string{}
+
 	// get public key
 	key, err := ioutil.ReadFile(keyLoc)
 	if err != nil {
@@ -40,34 +51,69 @@ func RegisterController(deviceType int64, keyLoc string, db *sql.DB) (Registrati
 
 	// compute available device ID
 	id, err := models.GetLowestAvailableDeviceID(db)
-	log.Println(err)
 	if err != nil {
 		return RegistrationParameters{}, err
 	}
 	output.DeviceID = id
 
-	// TODO: Create device in database
+	err = deviceDatabaseHandler(deviceType, output, db)
+	if err != nil {
+		return RegistrationParameters{}, err
+	}
 	return output, nil
 }
 
-// adapted from https://stackoverflow.com/questions/33031658/getting-rsa-public-key-from-certificate-in-golang
-//func getPublicKey() (PublicKey, error) { // no need to do this, just generate a public key using cmd tools
-//	certBytes, err := ioutil.ReadFile("pancast.cert")
-//	if err != nil {
-//		log.Fatal(err)
-//		return PublicKey{}, err
-//	}
-//	certBlock, _ := pem.Decode(certBytes)
-//	cert, err := x509.ParseCertificate(certBlock.Bytes)
-//	if err != nil {
-//		log.Fatal(err)
-//		return PublicKey{}, err
-//	}
-//	certKey := cert.PublicKey.(*rsa.PublicKey)
-//	return PublicKey{certKey.N, certKey.E}, nil
-//
-//}
-
+func deviceDatabaseHandler(dType int64, params RegistrationParameters, db *sql.DB) error {
+	deviceData := types.RegistrationData{
+		DeviceID:  params.DeviceID,
+		Secret:    params.Secret,
+		Clock:     params.Clock,
+	}
+	ctx := context.Background()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	err = models.CreateDevice(deviceData, tx, ctx)
+	if err != nil {
+		return err
+	}
+	switch dType {
+	case server_utils.DONGLE:
+		dongleData := types.DongleRegistrationData{
+			DeviceData: deviceData,
+			OTPs:       params.OTPs,
+		}
+		err = models.CreateDongle(dongleData, tx, ctx)
+		if err != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				return rollbackErr
+			}
+			return err
+		}
+	case server_utils.BEACON:
+		beaconData := types.BeaconRegistrationData{
+			DeviceData: deviceData,
+			LocationID: params.LocationID,
+		}
+		err = models.CreateBeacon(beaconData, tx, ctx)
+		if err != nil {
+			rollbackErr := tx.Rollback()
+			if rollbackErr != nil {
+				return rollbackErr
+			}
+			return err
+		}
+	default:
+		return errors.New("bad device type")
+	}
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func GetCurrentMinuteStamp() uint32 {
 	return uint32(time.Now().UnixNano() / int64(time.Minute))
@@ -80,14 +126,6 @@ func GenerateRandomByteString(n int) ([]byte, error) {
 		return key, err
 	}
 	return key, nil
-}
-
-func getPublicKey() (string, error) {
-	pubkey, err := ioutil.ReadFile("pancast.pubkey")
-	if err != nil {
-		return "", err
-	}
-	return string(pubkey), nil
 }
 
 func (r *RegistrationParameters) ConvertToJSONString() (string, error) {
