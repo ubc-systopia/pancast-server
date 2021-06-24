@@ -1,6 +1,7 @@
 package cronjobs
 
 import (
+	cryptorand "crypto/rand"
 	"database/sql"
 	"log"
 	"pancast-server/cuckoo"
@@ -8,7 +9,14 @@ import (
 	"pancast-server/server-utils"
 )
 
-func CreateNewFilter(cf *cuckoo.Filter, db *sql.DB) {
+type DiffprivParameters struct {
+	Mean        int64
+	Sensitivity float64
+	Epsilon     float64
+	Delta       float64
+}
+
+func CreateNewFilter(cf *cuckoo.Filter, db *sql.DB, params DiffprivParameters) {
 	rows := models.GetRiskEphIDs(db)
 	length := models.GetNumOfRecentRiskEphIDs(db)
 	// division by 4 is because there are 4 entries per bucket
@@ -21,6 +29,16 @@ func CreateNewFilter(cf *cuckoo.Filter, db *sql.DB) {
 			log.Fatal(err)
 		}
 		ephIDs = append(ephIDs, ephID)
+	}
+	junkCount := server_utils.SampleLaplacianDistribution(params.Mean, params.Sensitivity, params.Epsilon, params.Delta)
+	for i := int64(0); i < junkCount; i++ {
+		dummy := make([]byte, 15)
+		_, err := cryptorand.Read(dummy)
+		if err != nil {
+			log.Println(err)
+			break
+		}
+		ephIDs = append(ephIDs, dummy)
 	}
 	if baseLength < 4 {
 		baseLength = 4

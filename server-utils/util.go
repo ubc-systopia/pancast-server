@@ -1,8 +1,12 @@
 package server_utils
 
 import (
+	cryptorand "crypto/rand"
+	"encoding/binary"
 	"errors"
 	"fmt"
+	"golang.org/x/exp/rand"
+	"gonum.org/v1/gonum/stat/distuv"
 	"log"
 	"math"
 	"net/http"
@@ -39,6 +43,29 @@ func AllocateFilter(initSize int, ephIDs [][]byte) (*cuckoo.Filter, error) {
 	}
 	// success
 	return filter, nil
+}
+
+func SampleLaplacianDistribution(mean int64, sensitivity float64, epsilon float64, delta float64) int64 {
+	lambda := sensitivity / epsilon
+	t := math.Ceil(lambda * math.Log((delta-1+math.Exp(sensitivity/lambda))/(2*delta)))
+	randomBytes := make([]byte, 8)
+	_, err := cryptorand.Read(randomBytes)
+	if err != nil {
+		log.Println("error generating laplacian random variable")
+		return -1
+	}
+	randomNumberSource := rand.NewSource(binary.LittleEndian.Uint64(randomBytes))
+	laplacianInstance := distuv.Laplace{
+		Mu:    float64(mean),
+		Scale: lambda,
+		Src:   randomNumberSource,
+	}
+	randomVar := math.Floor(laplacianInstance.Rand())
+	if t+randomVar < 0 {
+		return 0
+	} else {
+		return int64(t + randomVar)
+	}
 }
 
 func GetCurrentMinuteStamp() uint32 {

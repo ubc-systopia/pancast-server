@@ -24,7 +24,10 @@ type Env struct {
 	certificateLoc string
 	privateKeyLoc  string
 	publicKeyLoc   string
+	privacyParams  cronjobs.DiffprivParameters
 }
+
+
 
 func basic(w http.ResponseWriter, req *http.Request) {
 	serverutils.Write(w, "Welcome")
@@ -33,21 +36,33 @@ func basic(w http.ResponseWriter, req *http.Request) {
 func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signal) {
 	db := database.InitDatabaseConnection()
 	serverURL := config.GetServerURL(conf)
+	mean, _ := strconv.Atoi(os.Getenv("MEAN"))
+	sens, _ := strconv.ParseFloat(os.Getenv("SENS"), 64)
+	epsilon, _ := strconv.ParseFloat(os.Getenv("EPSILON"), 64)
+	delta, _ := strconv.ParseFloat(os.Getenv("DELTA"), 64)
+
 	env := &Env{
 		db:             db,
 		cf:             nil,
 		certificateLoc: conf.CertificateLoc,
 		privateKeyLoc:  conf.PrivateKeyLoc,
 		publicKeyLoc:   conf.PublicKeyLoc,
+		privacyParams: cronjobs.DiffprivParameters{
+			Mean:        int64(mean),
+			Sensitivity: sens,
+			Epsilon:     epsilon,
+			Delta:       delta,
+		},
+
 	}
-	cronjobs.CreateNewFilter(env.cf, env.db) // create filter on startup for now
+	cronjobs.CreateNewFilter(env.cf, env.db, env.privacyParams) // create filter on startup for now
 	http.HandleFunc("/", basic)
 	http.HandleFunc("/register", env.RegisterNewDeviceIndex)
 	http.HandleFunc("/upload", env.UploadRiskEncountersIndex)
 	http.HandleFunc("/update", env.UpdateRiskAssessmentIndex)
 	c := cron.New()
 	_, err := c.AddFunc("@daily", func() {
-		cronjobs.CreateNewFilter(env.cf, env.db)
+		cronjobs.CreateNewFilter(env.cf, env.db, env.privacyParams)
 	})
 	if err != nil {
 		log.Println("error creating cron job")
