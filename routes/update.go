@@ -1,11 +1,26 @@
 package routes
 
 import (
-	"database/sql"
-	cuckoo "github.com/panmari/cuckoofilter"
+	"encoding/json"
+	"log"
+	"pancast-server/cuckoo"
 )
 
-func UpdateController(cf *cuckoo.Filter, db *sql.DB) []byte {
+type UpdateReturnParameters struct {
+	Length int
+	Filter []byte
+}
+
+func UpdateController(cf *cuckoo.Filter) []byte {
 	// nothing complicated here :)
-	return cf.Encode()
+	param := UpdateReturnParameters{
+		Length: len(cf.Buckets),
+		Filter: cf.Encode(),
+	}
+	jsonData, err := json.Marshal(param)
+	if err != nil {
+		log.Println(err)
+		return []byte{}
+	}
+	return jsonData
 }

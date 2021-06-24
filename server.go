@@ -3,13 +3,15 @@ package server
 import (
 	"database/sql"
 	"fmt"
-	cuckoo "github.com/panmari/cuckoofilter"
+	"github.com/robfig/cron/v3"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"pancast-server/config"
+	"pancast-server/cronjobs"
+	"pancast-server/cuckoo"
 	"pancast-server/database"
 	"pancast-server/routes"
 	serverutils "pancast-server/server-utils"
@@ -33,15 +35,23 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	serverURL := config.GetServerURL(conf)
 	env := &Env{
 		db:             db,
-		cf:             serverutils.PopulateCuckooFilter(db),
+		cf:             nil,
 		certificateLoc: conf.CertificateLoc,
 		privateKeyLoc:  conf.PrivateKeyLoc,
 		publicKeyLoc:   conf.PublicKeyLoc,
 	}
+	cronjobs.CreateNewFilter(env.cf, env.db) // create filter on startup for now
 	http.HandleFunc("/", basic)
 	http.HandleFunc("/register", env.RegisterNewDeviceIndex)
 	http.HandleFunc("/upload", env.UploadRiskEncountersIndex)
 	http.HandleFunc("/update", env.UpdateRiskAssessmentIndex)
+	c := cron.New()
+	_, err := c.AddFunc("@daily", func() {
+		cronjobs.CreateNewFilter(env.cf, env.db)
+	})
+	if err != nil {
+		log.Println("error creating cron job")
+	}
 	server := &http.Server{Addr: serverURL}
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt)
@@ -85,7 +95,7 @@ func (env *Env) UploadRiskEncountersIndex(w http.ResponseWriter, req *http.Reque
 	if input.Type == 0 && !hasPermissionToUploadToRiskDatabase() {
 		w.WriteHeader(http.StatusForbidden)
 	} else {
-		err := routes.UploadController(input, env.cf, env.db)
+		err := routes.UploadController(input, env.db)
 		if err != nil {
 			w.WriteHeader(http.StatusBadGateway)
 		} else {
@@ -105,7 +115,7 @@ func hasPermissionToUploadToRiskDatabase() bool {
 
 func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Request) {
 	// TODO: implement
-	ba := routes.UpdateController(env.cf, env.db)
+	ba := routes.UpdateController(env.cf)
 	code, err := w.Write(ba)
 	if err != nil {
 		log.Println(err)

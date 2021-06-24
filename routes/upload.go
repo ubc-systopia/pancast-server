@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	cuckoo "github.com/panmari/cuckoofilter"
 	"log"
 	"pancast-server/models"
 	"pancast-server/server-utils"
@@ -17,7 +16,7 @@ type UploadParameters struct {
 	Type    int64
 }
 
-func UploadController(input UploadParameters, cf *cuckoo.Filter, db *sql.DB) error {
+func UploadController(input UploadParameters, db *sql.DB) error {
 	// input validation
 	if !isUploadInputSafe(input.Entries) {
 		log.Println("error: unsafe or illegal input")
@@ -30,9 +29,6 @@ func UploadController(input UploadParameters, cf *cuckoo.Filter, db *sql.DB) err
 	} else {
 		log.Println("error: database type not valid")
 		return errors.New("error: database type not valid")
-	}
-	for _, entry := range input.Entries {
-		cf.Insert([]byte(entry.EphemeralID))
 	}
 	return nil
 }

@@ -13,14 +13,14 @@ func TestFilterCreation(t *testing.T) {
 	if err != nil {
 		t.Fatal("filter creation error")
 	}
-	if len(cf.buckets) != TEST_NUM_BUCKETS {
-		t.Fatal("incorrect number of buckets")
+	if len(cf.Buckets) != TEST_NUM_BUCKETS {
+		t.Fatal("incorrect number of Buckets")
 	}
-	for _, bucket := range cf.buckets {
-		if len(bucket.fp) != BUCKET_SIZE {
+	for _, bucket := range cf.Buckets {
+		if len(bucket.Fp) != BUCKET_SIZE {
 			t.Fatal("incorrect bucket size")
 		}
-		for _, fp := range bucket.fp {
+		for _, fp := range bucket.Fp {
 			if reflect.TypeOf(fp).Kind() != reflect.Uint32 {
 				t.Fatal("incorrect type")
 			}
@@ -34,14 +34,14 @@ func TestFilterCreation(t *testing.T) {
 func TestCreateFilterZeroBuckets(t *testing.T) {
 	_, err := CreateFilter(TEST_ZERO_NUM_BUCKETS)
 	if err == nil {
-		t.Fatal("zero buckets not allowed")
+		t.Fatal("zero Buckets not allowed")
 	}
 }
 
 func TestCreateFilterBadBucketCount(t *testing.T) {
 	_, err := CreateFilter(TEST_BAD_NUM_BUCKETS)
 	if err == nil {
-		t.Fatal("non-power of 2 buckets not allowed")
+		t.Fatal("non-power of 2 Buckets not allowed")
 	}
 }
 
@@ -50,7 +50,7 @@ func TestFilterInsert(t *testing.T) {
 	if err != nil {
 		t.Fatal("filter creation error")
 	}
-	item := []byte{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}
+	item := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
 	result := cf.Insert(item)
 	if !result {
 		t.Fatal("insertion error")
@@ -59,8 +59,8 @@ func TestFilterInsert(t *testing.T) {
 
 func TestFilterLookup(t *testing.T) {
 	cf, err := CreateFilter(TEST_NUM_BUCKETS)
-	item := []byte{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}
-	badItem := []byte{10,10,10,10,10,10,10,10,10,10,10,10,10,10,10}
+	item := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
+	badItem := []byte{10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10}
 	if err != nil {
 		t.Fatal("filter creation error")
 	}
@@ -88,7 +88,7 @@ func TestFilterDelete(t *testing.T) {
 	if err != nil {
 		t.Fatal("filter creation error")
 	}
-	item := []byte{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}
+	item := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
 	result := cf.Insert(item)
 	if !result {
 		t.Fatal("insertion error")
@@ -97,7 +97,7 @@ func TestFilterDelete(t *testing.T) {
 	if !deleteResult {
 		t.Fatal("could not look up previously inserted item")
 	}
-	badDeleteResult :=  cf.Delete(item)
+	badDeleteResult := cf.Delete(item)
 	if badDeleteResult {
 		t.Fatal("delete should not have returned true")
 	}
@@ -109,10 +109,10 @@ func TestFilterEncode(t *testing.T) {
 	if err != nil {
 		t.Fatal("filter creation error")
 	}
-	item := []byte{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}
+	item := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
 	cf.Insert(item)
 	byteArray := cf.Encode()
-	assertVal.Equal((TEST_NUM_BUCKETS * BUCKET_SIZE * FINGERPRINT_BITS) / 8, len(byteArray))
+	assertVal.Equal((TEST_NUM_BUCKETS*BUCKET_SIZE*FINGERPRINT_BITS)/8, len(byteArray))
 }
 
 func TestFilterDecode(t *testing.T) {
@@ -121,14 +121,14 @@ func TestFilterDecode(t *testing.T) {
 	if err != nil {
 		t.Fatal("filter creation error")
 	}
-	item := []byte{1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}
+	item := []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
 	cf.Insert(item)
 	byteArray := cf.Encode()
 	newFilter, err := Decode(byteArray)
 	if err != nil {
 		t.Fatal("error decoding byte array")
 	}
-	assertVal.Equal(TEST_NUM_BUCKETS, len(newFilter.buckets))
+	assertVal.Equal(TEST_NUM_BUCKETS, len(newFilter.Buckets))
 	lookupResult := newFilter.Lookup(item)
 	if !lookupResult {
 		t.Fatal("item should exist within filter")
@@ -159,7 +159,6 @@ func TestFilterMassDecode(t *testing.T) {
 		}
 	}
 }
-
 
 func TestFilterBatchInsertAndLookup(t *testing.T) {
 	NumCases := 300

@@ -7,9 +7,9 @@ type IRegistrationData interface {
 }
 
 type RegistrationData struct {
-	DeviceID  uint32
-	Secret    []byte
-	Clock     uint32
+	DeviceID uint32
+	Secret   []byte
+	Clock    uint32
 }
 
 func ConcatRegistrationData(r RegistrationData) string {

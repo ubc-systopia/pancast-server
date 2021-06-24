@@ -11,7 +11,6 @@ import (
 	"pancast-server/models"
 	server_utils "pancast-server/server-utils"
 	"pancast-server/types"
-	"time"
 )
 
 type RegistrationParameters struct {
@@ -40,7 +39,7 @@ func RegisterController(deviceType int64, keyLoc string, db *sql.DB) (Registrati
 	output.ServerKey = string(key)
 
 	// compute current time
-	output.Clock = GetCurrentMinuteStamp()
+	output.Clock = server_utils.GetCurrentMinuteStamp()
 
 	// using the AES-256 standard, where keys have 32 bytes
 	aesKey, err := GenerateRandomByteString(32)
@@ -65,9 +64,9 @@ func RegisterController(deviceType int64, keyLoc string, db *sql.DB) (Registrati
 
 func deviceDatabaseHandler(dType int64, params RegistrationParameters, db *sql.DB) error {
 	deviceData := types.RegistrationData{
-		DeviceID:  params.DeviceID,
-		Secret:    params.Secret,
-		Clock:     params.Clock,
+		DeviceID: params.DeviceID,
+		Secret:   params.Secret,
+		Clock:    params.Clock,
 	}
 	ctx := context.Background()
 	tx, err := db.BeginTx(ctx, nil)
@@ -113,10 +112,6 @@ func deviceDatabaseHandler(dType int64, params RegistrationParameters, db *sql.D
 		return err
 	}
 	return nil
-}
-
-func GetCurrentMinuteStamp() uint32 {
-	return uint32(time.Now().UnixNano() / int64(time.Minute))
 }
 
 func GenerateRandomByteString(n int) ([]byte, error) {

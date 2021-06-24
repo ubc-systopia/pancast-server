@@ -16,7 +16,7 @@ func IsPowerOfTwo(numBuckets int) bool {
 
 func GetAltIndex(fp Fingerprint, index uint, bucketMask uint) uint {
 	hash := GetHash(FingerprintToByteArray(fp))
-	return uint(uint64(index) ^ hash) & bucketMask
+	return uint(uint64(index)^hash) & bucketMask
 }
 
 func GetFingerprint(hash uint64) uint32 {
@@ -30,6 +30,7 @@ func GetFingerprint(hash uint64) uint32 {
 func GetHash(item []byte) uint64 {
 	return metro.Hash64(item, 1337)
 }
+
 //
 //// getIndicesAndFingerprint returns the 2 bucket indices and fingerprint to be used
 func GetIndexAndFingerprint(item []byte, bucketMask uint) (uint, Fingerprint) {
@@ -50,7 +51,7 @@ func ShiftByteArray(item []byte) []byte {
 	output := make([]byte, FINGERPRINT_SIZE)
 	for i, _ := range output {
 		if i != 0 {
-			output[i - 1] |= item[i] >> (8 - SHIFT_LEEWAY)
+			output[i-1] |= item[i] >> (8 - SHIFT_LEEWAY)
 		}
 		output[i] |= item[i] << SHIFT_LEEWAY
 	}
@@ -67,12 +68,11 @@ func UnshiftByteArray(item []byte) []byte {
 		if i == 0 {
 			output[i] |= item[i] >> SHIFT_LEEWAY
 		} else {
-			output[i] |= item[i - 1] << (8 - SHIFT_LEEWAY) | item[i] >> SHIFT_LEEWAY
+			output[i] |= item[i-1]<<(8-SHIFT_LEEWAY) | item[i]>>SHIFT_LEEWAY
 		}
 	}
 	return output
 }
-
 
 func WriteByteToPositionAndBitOffset(arr []byte, input byte, byteOffset int, bitOffset int) []byte {
 	if bitOffset == 0 {
@@ -81,19 +81,19 @@ func WriteByteToPositionAndBitOffset(arr []byte, input byte, byteOffset int, bit
 		prevByteLowerBits := input >> bitOffset
 		nextByteUpperBits := input << (8 - bitOffset)
 		arr[byteOffset] |= prevByteLowerBits
-		arr[byteOffset + 1] |= nextByteUpperBits
+		arr[byteOffset+1] |= nextByteUpperBits
 	}
 	return arr
 }
 
 func WriteBitsToPositionAndBitOffset(arr []byte, input byte, byteOffset int, bitOffset int, numBits int) []byte {
-	if numBits + bitOffset <= 8 {
+	if numBits+bitOffset <= 8 {
 		arr[byteOffset] |= input >> bitOffset
 	} else {
 		prevByteLowerBits := input >> bitOffset
 		nextByteUpperBits := input << (8 - bitOffset)
 		arr[byteOffset] |= prevByteLowerBits
-		arr[byteOffset + 1] |= nextByteUpperBits
+		arr[byteOffset+1] |= nextByteUpperBits
 	}
 	return arr
 }
@@ -108,24 +108,24 @@ func ReadFingerprintFromPositionAndBitOffset(arr []byte, byteOffset int, bitOffs
 	output := make([]byte, FINGERPRINT_SIZE)
 	for i := 0; i < numBytesToRead; i++ {
 		// needs refactoring
-		if numBytesToRead > FINGERPRINT_SIZE && i == numBytesToRead - 1 {
+		if numBytesToRead > FINGERPRINT_SIZE && i == numBytesToRead-1 {
 			// at the last array slot, only add to i - 1th block
 			if remainingBitsToRead != 0 {
-				output[i - 1] |= (arr[byteOffset + i] >> (8 - bitOffset)) &
-					GenerateHighValueBitmask(remainingBitsToRead + 8 - bitOffset)
+				output[i-1] |= (arr[byteOffset+i] >> (8 - bitOffset)) &
+					GenerateHighValueBitmask(remainingBitsToRead+8-bitOffset)
 			}
 		} else if i == 0 {
 			// at first array slot, add to first block
-			output[i] |= arr[byteOffset + i] << bitOffset
+			output[i] |= arr[byteOffset+i] << bitOffset
 		} else {
 			// add to i - 1th and ith slot
-			output[i - 1] |= arr[byteOffset + i] >> (8 - bitOffset)
-			if i == numBytesToRead - 1 {
+			output[i-1] |= arr[byteOffset+i] >> (8 - bitOffset)
+			if i == numBytesToRead-1 {
 				// read remaining bits
-				output[i] |= (arr[byteOffset + i] << bitOffset) & GenerateHighValueBitmask(remainingBitsToRead)
+				output[i] |= (arr[byteOffset+i] << bitOffset) & GenerateHighValueBitmask(remainingBitsToRead)
 			} else {
 				// read till offset
-				output[i] |= arr[byteOffset + i] << bitOffset
+				output[i] |= arr[byteOffset+i] << bitOffset
 			}
 
 		}

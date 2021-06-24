@@ -15,18 +15,16 @@ func TestGetFingerprint(t *testing.T) {
 	assertVar.Equal(uint32(65782274), GetFingerprint(200000000))
 }
 
-
-
 func TestGetIndexAndFingerprint(t *testing.T) {
 	assertVar := assert.New(t)
 	MaxLoops := 1000
 	for i := 0; i < MaxLoops; i++ {
 		item := make([]byte, 15)
 		rand.Read(item)
-		index, fp := GetIndexAndFingerprint(item, TEST_NUM_BUCKETS - 1)
+		index, fp := GetIndexAndFingerprint(item, TEST_NUM_BUCKETS-1)
 		assertVar.GreaterOrEqual(index, uint(0))
-		assertVar.LessOrEqual(index, uint(TEST_NUM_BUCKETS - 1))
-		assertVar.Equal(int(fp >> 27), 0)
+		assertVar.LessOrEqual(index, uint(TEST_NUM_BUCKETS-1))
+		assertVar.Equal(int(fp>>27), 0)
 	}
 }
 
@@ -36,10 +34,10 @@ func TestGetAltIndex(t *testing.T) {
 	for i := 0; i < MaxLoops; i++ {
 		item := make([]byte, 15)
 		rand.Read(item)
-		index, fp := GetIndexAndFingerprint(item, TEST_NUM_BUCKETS - 1)
-		newIndex := GetAltIndex(fp, index, TEST_NUM_BUCKETS - 1)
+		index, fp := GetIndexAndFingerprint(item, TEST_NUM_BUCKETS-1)
+		newIndex := GetAltIndex(fp, index, TEST_NUM_BUCKETS-1)
 		assertVar.GreaterOrEqual(newIndex, uint(0))
-		assertVar.LessOrEqual(newIndex, uint(TEST_NUM_BUCKETS - 1))
+		assertVar.LessOrEqual(newIndex, uint(TEST_NUM_BUCKETS-1))
 	}
 }
 

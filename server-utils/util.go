@@ -1,12 +1,13 @@
 package server_utils
 
 import (
-	"database/sql"
+	"errors"
 	"fmt"
-	cuckoo "github.com/panmari/cuckoofilter"
 	"log"
+	"math"
 	"net/http"
-	"pancast-server/models"
+	"pancast-server/cuckoo"
+	"time"
 )
 
 func Write(res http.ResponseWriter, output string) {
@@ -16,16 +17,30 @@ func Write(res http.ResponseWriter, output string) {
 	}
 }
 
-func PopulateCuckooFilter(db *sql.DB) *cuckoo.Filter {
-	cf := cuckoo.NewFilter(1000000)
-	rows := models.GetRiskEphIDs(db)
-	for rows.Next() {
-		var ephID []byte
-		err := rows.Scan(&ephID)
-		if err != nil {
-			log.Fatal(err)
-		}
-		cf.Insert(ephID)
+func NextPowerOfTwo(num int) int {
+	logVal := math.Log2(float64(num))
+	exponent := math.Ceil(logVal)
+	return int(math.Pow(2, exponent))
+}
+
+func AllocateFilter(initSize int, ephIDs [][]byte) (*cuckoo.Filter, error) {
+	if initSize > int(math.Pow(2, EXPONENT_TOO_LARGE)) {
+		return nil, errors.New("filter has grown too large")
 	}
-	return cf
+	filter, err := cuckoo.CreateFilter(initSize)
+	if err != nil {
+		return nil, err
+	}
+	for _, ephID := range ephIDs {
+		result := filter.Insert(ephID)
+		if !result {
+			return AllocateFilter(initSize*2, ephIDs)
+		}
+	}
+	// success
+	return filter, nil
+}
+
+func GetCurrentMinuteStamp() uint32 {
+	return uint32(time.Now().UnixNano() / int64(time.Minute))
 }
