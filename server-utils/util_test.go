@@ -1,7 +1,6 @@
 package server_utils
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -11,7 +10,6 @@ func TestSampleLaplacianDistribution(t *testing.T) {
 	epsilon := 0.1
 	delta := 0.02
 	for i := 0; i < 1000; i++ {
-		sample := SampleLaplacianDistribution(mean, sensitivity, epsilon, delta)
-		fmt.Println(sample)
+		_ = SampleLaplacianDistribution(int64(mean), sensitivity, epsilon, delta)
 	}
 }

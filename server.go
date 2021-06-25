@@ -27,13 +27,12 @@ type Env struct {
 	privacyParams  cronjobs.DiffprivParameters
 }
 
-
-
 func basic(w http.ResponseWriter, req *http.Request) {
 	serverutils.Write(w, "Welcome")
 }
 
 func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signal) {
+	// initialization
 	db := database.InitDatabaseConnection()
 	serverURL := config.GetServerURL(conf)
 	mean, _ := strconv.Atoi(os.Getenv("MEAN"))
@@ -53,16 +52,28 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 			Epsilon:     epsilon,
 			Delta:       delta,
 		},
-
 	}
-	cronjobs.CreateNewFilter(env.cf, env.db, env.privacyParams) // create filter on startup for now
+	// initialize filter on startup
+	newFilter, err := cronjobs.CreateNewFilter(env.db, env.privacyParams) // create filter on startup for now
+	if err != nil {
+		log.Fatal(err)
+	}
+	env.cf = newFilter
+
+	// initialize routes
 	http.HandleFunc("/", basic)
 	http.HandleFunc("/register", env.RegisterNewDeviceIndex)
 	http.HandleFunc("/upload", env.UploadRiskEncountersIndex)
 	http.HandleFunc("/update", env.UpdateRiskAssessmentIndex)
+
+	// initialize cron job
 	c := cron.New()
-	_, err := c.AddFunc("@daily", func() {
-		cronjobs.CreateNewFilter(env.cf, env.db, env.privacyParams)
+	_, err = c.AddFunc("@daily", func() {
+		newFilter, err = cronjobs.CreateNewFilter(env.db, env.privacyParams)
+		if err != nil {
+			log.Println("error updating cuckoo filter")
+		}
+		env.cf = newFilter
 	})
 	if err != nil {
 		log.Println("error creating cron job")

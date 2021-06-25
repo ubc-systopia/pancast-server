@@ -26,12 +26,5 @@ func TestUpload(t *testing.T) {
 		},
 	)
 
-	t.Run(
-		"upload_test_less_basic",
-		func(t *testing.T) {
-
-		},
-	)
-
 	TeardownServer(srv)
 }

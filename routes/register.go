@@ -2,7 +2,6 @@ package routes
 
 import (
 	"context"
-	"crypto/rand"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -42,7 +41,7 @@ func RegisterController(deviceType int64, keyLoc string, db *sql.DB) (Registrati
 	output.Clock = server_utils.GetCurrentMinuteStamp()
 
 	// using the AES-256 standard, where keys have 32 bytes
-	aesKey, err := GenerateRandomByteString(32)
+	aesKey, err := server_utils.GenerateRandomByteString(32)
 	if err != nil {
 		return RegistrationParameters{}, err
 	}
@@ -114,14 +113,7 @@ func deviceDatabaseHandler(dType int64, params RegistrationParameters, db *sql.D
 	return nil
 }
 
-func GenerateRandomByteString(n int) ([]byte, error) {
-	key := make([]byte, n)
-	_, err := rand.Read(key)
-	if err != nil {
-		return key, err
-	}
-	return key, nil
-}
+
 
 func (r *RegistrationParameters) ConvertToJSONString() (string, error) {
 	output, err := json.Marshal(r)

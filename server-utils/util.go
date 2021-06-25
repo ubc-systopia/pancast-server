@@ -44,6 +44,15 @@ func AllocateFilter(initSize int, ephIDs [][]byte) (*cuckoo.Filter, error) {
 	// success
 	return filter, nil
 }
+func GenerateRandomByteString(n int) ([]byte, error) {
+	key := make([]byte, n)
+	_, err := rand.Read(key)
+	if err != nil {
+		return key, err
+	}
+	return key, nil
+}
+
 
 func SampleLaplacianDistribution(mean int64, sensitivity float64, epsilon float64, delta float64) int64 {
 	lambda := sensitivity / epsilon
@@ -70,4 +79,19 @@ func SampleLaplacianDistribution(mean int64, sensitivity float64, epsilon float6
 
 func GetCurrentMinuteStamp() uint32 {
 	return uint32(time.Now().UnixNano() / int64(time.Minute))
+}
+
+func ShuffleByteArray(array [][]byte) [][]byte {
+	copiedArray := array
+	currentIndex := len(copiedArray)
+	var tempVal []byte
+	randomIndex := 0
+	for currentIndex != 0 {
+		randomIndex = rand.Intn(len(copiedArray))
+		currentIndex -= 1
+		tempVal = copiedArray[currentIndex]
+		copiedArray[currentIndex] = copiedArray[randomIndex]
+		copiedArray[randomIndex] = tempVal
+	}
+	return copiedArray
 }
