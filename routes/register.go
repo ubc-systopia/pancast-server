@@ -3,6 +3,7 @@ package routes
 import (
 	"context"
 	"database/sql"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -18,14 +19,14 @@ type RegistrationParameters struct {
 	Clock      uint32
 	Secret     []byte
 	OTPs       []string
-	LocationID string
+	LocationID uint64
 }
 
 func RegisterController(deviceType int64, keyLoc string, db *sql.DB) (RegistrationParameters, error) {
 	var output RegistrationParameters
 	// temporary placeholder for location
-	tempBeaconLocation := "LOCATION"
-	output.LocationID = tempBeaconLocation
+	tempBeaconLocation := []byte("LOCATION")
+	output.LocationID = binary.LittleEndian.Uint64(tempBeaconLocation)
 
 	// temporary placeholder for OTPs
 	output.OTPs = []string{}
@@ -112,8 +113,6 @@ func deviceDatabaseHandler(dType int64, params RegistrationParameters, db *sql.D
 	}
 	return nil
 }
-
-
 
 func (r *RegistrationParameters) ConvertToJSONString() (string, error) {
 	output, err := json.Marshal(r)

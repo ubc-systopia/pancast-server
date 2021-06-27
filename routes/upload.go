@@ -41,10 +41,9 @@ func UploadController(input UploadParameters, db *sql.DB) error {
 
 func isUploadInputSafe(input []types.Entry) bool {
 	for _, entry := range input {
-		ephCond := checkInputType(string(entry.EphemeralID), ALPHANUMERIC)
-		locCond := checkInputType(entry.LocationID, SPECIAL)
+		ephCond := checkInputType(entry.EphemeralID, BASE64)
 		// assume that the integers in the struct are safe
-		if !ephCond || !locCond {
+		if !ephCond {
 			return false
 		}
 	}
@@ -52,10 +51,10 @@ func isUploadInputSafe(input []types.Entry) bool {
 }
 
 const (
-	ALPHABETIC   = 0
-	NUMERIC      = 1
-	ALPHANUMERIC = 2
-	SPECIAL      = 3
+	ALPHABETIC = 0
+	NUMERIC    = 1
+	BASE64     = 2
+	SPECIAL    = 3
 )
 
 func checkInputType(input string, inputType int) bool {
@@ -72,9 +71,9 @@ func checkInputType(input string, inputType int) bool {
 				return false
 			}
 		}
-	case ALPHANUMERIC:
+	case BASE64:
 		for _, c := range input {
-			if !unicode.IsLetter(c) && !unicode.IsDigit(c) {
+			if !unicode.IsLetter(c) && !unicode.IsDigit(c) && string(c) != "=" && string(c) != "+" && string(c) != "/" {
 				return false
 			}
 		}

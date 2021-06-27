@@ -4,7 +4,7 @@ import "fmt"
 
 type BeaconRegistrationData struct {
 	DeviceData RegistrationData
-	LocationID string
+	LocationID uint64
 }
 
 func ConcatBeaconData(b BeaconRegistrationData) string {

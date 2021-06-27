@@ -6,7 +6,7 @@ import (
 
 type Entry struct {
 	EphemeralID string // (should be byte array, but for now its a string)
-	LocationID  string
+	LocationID  uint64
 	DongleClock uint64
 	BeaconClock uint64
 	BeaconID    uint64
@@ -24,6 +24,6 @@ func ConcatEntries(input []Entry) string {
 }
 
 func createEntries(input Entry) string {
-	return fmt.Sprintf("('%s', '%s', %d, %d, %d)", input.EphemeralID, input.LocationID,
+	return fmt.Sprintf("('%s', '%d', %d, %d, %d)", input.EphemeralID, input.LocationID,
 		input.DongleClock, input.BeaconClock, input.BeaconID)
 }

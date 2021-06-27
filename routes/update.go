@@ -15,10 +15,9 @@ func UpdateController(cf *cuckoo.Filter) []byte {
 		return []byte{}
 	}
 	length := make([]byte, 8)
-	binary.LittleEndian.PutUint64(length, uint64(len(cf.Buckets)) * cuckoo.FINGERPRINT_BITS * cuckoo.BUCKET_SIZE / 8) // add ceil
+	binary.LittleEndian.PutUint64(length, uint64(len(cf.Buckets))*cuckoo.FINGERPRINT_BITS*cuckoo.BUCKET_SIZE/8) // add ceil
 	data := cf.Encode()
 	payload := append(length, data...)
 	return payload
-
 
 }

@@ -2,6 +2,7 @@ package server_utils
 
 import (
 	cryptorand "crypto/rand"
+	"encoding/base64"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -53,7 +54,6 @@ func GenerateRandomByteString(n int) ([]byte, error) {
 	return key, nil
 }
 
-
 func SampleLaplacianDistribution(mean int64, sensitivity float64, epsilon float64, delta float64) int64 {
 	lambda := sensitivity / epsilon
 	t := math.Ceil(lambda * math.Log((delta-1+math.Exp(sensitivity/lambda))/(2*delta)))
@@ -94,4 +94,12 @@ func ShuffleByteArray(array [][]byte) [][]byte {
 		copiedArray[randomIndex] = tempVal
 	}
 	return copiedArray
+}
+
+func DecodeBase64ToByteArray(base64input string) ([]byte, error) {
+	output, err := base64.StdEncoding.DecodeString(base64input)
+	if err != nil {
+		return nil, err
+	}
+	return output, nil
 }

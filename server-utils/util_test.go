@@ -20,7 +20,7 @@ func TestSampleLaplacianDistribution(t *testing.T) {
 
 	for i := 0; i < samples; i++ {
 		junkCount := SampleLaplacianDistribution(int64(mean), sensitivity, epsilon, delta)
-		index := int(math.Floor(float64(junkCount + count) / float64(granularity)) * float64(granularity))
+		index := int(math.Floor(float64(junkCount+count)/float64(granularity)) * float64(granularity))
 		_, found := distribution[index]
 		if !found {
 			distribution[index] = 1

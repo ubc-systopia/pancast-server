@@ -19,7 +19,6 @@ func CreateNewFilter(db *sql.DB, params DiffprivParameters) (*cuckoo.Filter, err
 	// get data to be broadcast
 	rows := models.GetRiskEphIDs(db)
 	length := models.GetNumOfRecentRiskEphIDs(db)
-	log.Println(length)
 	// division by 4 is because there are 4 entries per bucket, and therefore
 	// the filter can hold 4 * baseLength entries
 	baseLength := server_utils.NextPowerOfTwo(length) / 4
@@ -45,6 +44,7 @@ func CreateNewFilter(db *sql.DB, params DiffprivParameters) (*cuckoo.Filter, err
 	if baseLength < 4 {
 		baseLength = 4
 	}
+	log.Printf("Number of ephemeral IDs generated: %d", junkCount)
 	// tries to create a filter, doubling in size if not possible, and ultimately terminating
 	// once the filter becomes too big to be feasibly transferred.
 	filter, err := server_utils.AllocateFilter(baseLength, server_utils.ShuffleByteArray(ephIDs))

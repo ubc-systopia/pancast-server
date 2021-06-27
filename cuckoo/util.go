@@ -23,7 +23,7 @@ func GetFingerprint(hash uint64) uint32 {
 	// Use least significant bits for fingerprint.
 	// Range of FP is [1, MAX_VALUE_THAT_27_BITS_CAN_REPRESENT]
 	FingerprintMask := uint64(math.Pow(2, FINGERPRINT_BITS)) - 1
-	fp := uint32((hash%(FingerprintMask - 1)) + 1)
+	fp := uint32((hash % (FingerprintMask - 1)) + 1)
 	return fp
 }
 
