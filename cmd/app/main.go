@@ -15,7 +15,7 @@ func main() {
 		log.Fatal(err)
 	}
 	srv, _, done := server.StartServer(conf)
-	<-done
+	<-done // waiting for SIGKILL or interrupt signals
 	fmt.Println("\nShutting down...")
 	err = srv.Shutdown(context.Background())
 	if err != nil {

@@ -3,13 +3,15 @@ package server
 import (
 	"database/sql"
 	"fmt"
-	cuckoo "github.com/panmari/cuckoofilter"
+	"github.com/robfig/cron/v3"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"pancast-server/config"
+	"pancast-server/cronjobs"
+	"pancast-server/cuckoo"
 	"pancast-server/database"
 	"pancast-server/routes"
 	serverutils "pancast-server/server-utils"
@@ -22,6 +24,7 @@ type Env struct {
 	certificateLoc string
 	privateKeyLoc  string
 	publicKeyLoc   string
+	privacyParams  cronjobs.DiffprivParameters
 }
 
 func basic(w http.ResponseWriter, req *http.Request) {
@@ -29,19 +32,52 @@ func basic(w http.ResponseWriter, req *http.Request) {
 }
 
 func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signal) {
+	// initialization
 	db := database.InitDatabaseConnection()
 	serverURL := config.GetServerURL(conf)
+	mean, _ := strconv.Atoi(os.Getenv("MEAN"))
+	sens, _ := strconv.ParseFloat(os.Getenv("SENS"), 64)
+	epsilon, _ := strconv.ParseFloat(os.Getenv("EPSILON"), 64)
+	delta, _ := strconv.ParseFloat(os.Getenv("DELTA"), 64)
+
 	env := &Env{
 		db:             db,
-		cf:             serverutils.PopulateCuckooFilter(db),
+		cf:             nil,
 		certificateLoc: conf.CertificateLoc,
 		privateKeyLoc:  conf.PrivateKeyLoc,
 		publicKeyLoc:   conf.PublicKeyLoc,
+		privacyParams: cronjobs.DiffprivParameters{
+			Mean:        int64(mean),
+			Sensitivity: sens,
+			Epsilon:     epsilon,
+			Delta:       delta,
+		},
 	}
+	// initialize filter on startup
+	newFilter, err := cronjobs.CreateNewFilter(env.db, env.privacyParams) // create filter on startup for now
+	if err != nil {
+		log.Fatal(err)
+	}
+	env.cf = newFilter
+
+	// initialize routes
 	http.HandleFunc("/", basic)
 	http.HandleFunc("/register", env.RegisterNewDeviceIndex)
 	http.HandleFunc("/upload", env.UploadRiskEncountersIndex)
 	http.HandleFunc("/update", env.UpdateRiskAssessmentIndex)
+
+	// initialize cron job
+	c := cron.New()
+	_, err = c.AddFunc("@daily", func() {
+		newFilter, err = cronjobs.CreateNewFilter(env.db, env.privacyParams)
+		if err != nil {
+			log.Println("error updating cuckoo filter")
+		}
+		env.cf = newFilter
+	})
+	if err != nil {
+		log.Println("error creating cron job")
+	}
 	server := &http.Server{Addr: serverURL}
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt)
@@ -85,7 +121,7 @@ func (env *Env) UploadRiskEncountersIndex(w http.ResponseWriter, req *http.Reque
 	if input.Type == 0 && !hasPermissionToUploadToRiskDatabase() {
 		w.WriteHeader(http.StatusForbidden)
 	} else {
-		err := routes.UploadController(input, env.cf, env.db)
+		err := routes.UploadController(input, env.db)
 		if err != nil {
 			w.WriteHeader(http.StatusBadGateway)
 		} else {
@@ -105,7 +141,7 @@ func hasPermissionToUploadToRiskDatabase() bool {
 
 func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Request) {
 	// TODO: implement
-	ba := routes.UpdateController(env.cf, env.db)
+	ba := routes.UpdateController(env.cf)
 	code, err := w.Write(ba)
 	if err != nil {
 		log.Println(err)

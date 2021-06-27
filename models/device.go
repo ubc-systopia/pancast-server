@@ -3,7 +3,6 @@ package models
 import (
 	"context"
 	"database/sql"
-	"log"
 	"pancast-server/types"
 )
 
@@ -38,13 +37,12 @@ func GetLowestAvailableDeviceID(db *sql.DB) (uint32, error) {
 		}
 		freeArr = append(freeArr, candidate)
 	}
-	log.Println(freeArr)
 	for idx, el := range freeArr {
 		if el > uint32(idx) {
 			return uint32(idx), nil
 		}
 	}
-	if len(freeArr) < 1E10 {
+	if len(freeArr) < 1e10 {
 		return uint32(len(freeArr)), nil
 	}
 	return 0, err // too many devices
