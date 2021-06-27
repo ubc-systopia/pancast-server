@@ -129,7 +129,7 @@ func (cf *Filter) Encode() []byte {
 	output := make([]byte, ArrayLen)
 	byteOffset := 0
 	bitOffset := 0
-	remainderBits := int(FINGERPRINT_BITS - 8*math.Floor(FINGERPRINT_BITS/8))
+	remainderBits := int(FINGERPRINT_BITS - 8*math.Floor(FINGERPRINT_BITS/8)) // 8 to constant
 	for _, bucket := range cf.Buckets {
 		for _, fingerprint := range bucket.Fp {
 			arrayElements := FingerprintToByteArray(fingerprint)

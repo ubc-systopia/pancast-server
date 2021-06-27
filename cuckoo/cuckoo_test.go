@@ -133,6 +133,8 @@ func TestFilterDecode(t *testing.T) {
 	if !lookupResult {
 		t.Fatal("item should exist within filter")
 	}
+	newItem := []byte("00d17c102c46b0d")
+	newFilter.Lookup(newItem)
 }
 
 func TestFilterMassDecode(t *testing.T) {

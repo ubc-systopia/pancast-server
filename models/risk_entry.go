@@ -10,14 +10,14 @@ import (
 )
 
 func CreateRiskEntries(input []types.Entry, db *sql.DB) bool {
+	query := "INSERT INTO risk_entries VALUES %s;"
+	values := types.ConcatEntries(input)
+	statement := fmt.Sprintf(query, values)
 	ctx := context.Background()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	query := "INSERT INTO risk_entries VALUES %s;"
-	values := types.ConcatEntries(input)
-	statement := fmt.Sprintf(query, values)
 	_, err = tx.ExecContext(ctx, statement)
 	log.Println(err)
 	if err != nil {

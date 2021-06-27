@@ -11,26 +11,14 @@ type UpdateReturnParameters struct {
 }
 
 func UpdateController(cf *cuckoo.Filter) []byte {
-	// nothing complicated here, just dumping the filter as a byte array
-
-	// new changeee
+	if cf == nil {
+		return []byte{}
+	}
 	length := make([]byte, 8)
-	binary.LittleEndian.PutUint64(length, uint64(len(cf.Buckets)))
+	binary.LittleEndian.PutUint64(length, uint64(len(cf.Buckets)) * cuckoo.FINGERPRINT_BITS * cuckoo.BUCKET_SIZE / 8) // add ceil
 	data := cf.Encode()
 	payload := append(length, data...)
 	return payload
-
-	//param := UpdateReturnParameters{
-	//	Length: int64(len(cf.Buckets)),
-	//	Filter: cf.Encode(),
-	//}
-	//jsonData, err := json.Marshal(param)
-	//if err != nil {
-	//	log.Println(err)
-	//	return []byte{}
-	//}
-	//return jsonData
-	//return cf.Encode()
 
 
 }
