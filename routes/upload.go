@@ -23,9 +23,15 @@ func UploadController(input UploadParameters, db *sql.DB) error {
 		return errors.New("unsafe or illegal input")
 	}
 	if input.Type == server_utils.RISK {
-		models.CreateRiskEntries(input.Entries, db)
+		success := models.CreateRiskEntries(input.Entries, db)
+		if !success {
+			return errors.New("error: create unsuccessful")
+		}
 	} else if input.Type == server_utils.EPI {
-		models.CreateEpiEntries(input.Entries, db)
+		success := models.CreateEpiEntries(input.Entries, db)
+		if !success {
+			return errors.New("error: create unsuccessful")
+		}
 	} else {
 		log.Println("error: database type not valid")
 		return errors.New("error: database type not valid")

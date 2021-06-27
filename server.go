@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
 	"github.com/robfig/cron/v3"
@@ -16,6 +17,7 @@ import (
 	"pancast-server/routes"
 	serverutils "pancast-server/server-utils"
 	"strconv"
+	"time"
 )
 
 type Env struct {
@@ -61,14 +63,23 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	env.cf = newFilter
 
 	// initialize routes
-	http.HandleFunc("/", basic)
-	http.HandleFunc("/register", env.RegisterNewDeviceIndex)
-	http.HandleFunc("/upload", env.UploadRiskEncountersIndex)
-	http.HandleFunc("/update", env.UpdateRiskAssessmentIndex)
+	mux := http.NewServeMux()
+	basicHandler := http.HandlerFunc(basic)
+	registerHandler := http.HandlerFunc(env.RegisterNewDeviceIndex)
+	uploadHandler := http.HandlerFunc(env.UploadRiskEncountersIndex)
+	updateHandler := http.HandlerFunc(env.UpdateRiskAssessmentIndex)
+	mux.Handle("/", TelemetryWrapper(basicHandler))
+	mux.Handle("/register", TelemetryWrapper(registerHandler))
+	mux.Handle("/upload", TelemetryWrapper(uploadHandler))
+	mux.Handle("/update", TelemetryWrapper(updateHandler))
+	//http.HandleFunc("/", basic)
+	//http.HandleFunc("/register", env.RegisterNewDeviceIndex)
+	//http.HandleFunc("/upload", env.UploadRiskEncountersIndex)
+	//http.HandleFunc("/update", env.UpdateRiskAssessmentIndex)
 
 	// initialize cron job
 	c := cron.New()
-	_, err = c.AddFunc("@daily", func() {
+	_, err = c.AddFunc("@daily", func() { // starts from the moment this is invoked
 		newFilter, err = cronjobs.CreateNewFilter(env.db, env.privacyParams)
 		if err != nil {
 			log.Println("error updating cuckoo filter")
@@ -83,7 +94,7 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	signal.Notify(done, os.Interrupt)
 	go func() {
 		fmt.Println("Listening on address: " + serverURL)
-		if err := http.ListenAndServeTLS(serverURL, env.certificateLoc, env.privateKeyLoc, nil); err != nil {
+		if err := http.ListenAndServeTLS(serverURL, env.certificateLoc, env.privateKeyLoc, mux); err != nil {
 			log.Fatal(err)
 		}
 	}()
@@ -140,11 +151,26 @@ func hasPermissionToUploadToRiskDatabase() bool {
 }
 
 func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Request) {
-	// TODO: implement
 	ba := routes.UpdateController(env.cf)
-	code, err := w.Write(ba)
+	_, err := w.Write(ba)
 	if err != nil {
 		log.Println(err)
 	}
-	log.Println(code)
+}
+
+func TelemetryWrapper(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		body, _ := ioutil.ReadAll(req.Body)
+		req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+		recvTime := time.Now()
+		h.ServeHTTP(w, req)
+		totalTime := time.Since(recvTime)
+		log.Println("Request received")
+		log.Println("Time elapsed: " + totalTime.String())
+		log.Println("Routed for " + req.URL.Path)
+		if req.URL.Path == "/upload" {
+			input := routes.ConvertStringToUploadParam(body)
+			log.Println("Number of ephemeral IDs submitted: " + strconv.Itoa(len(input.Entries)))
+		}
+	})
 }

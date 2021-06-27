@@ -1,6 +1,7 @@
 {
   "Address": "",
   "Port": "8081",
+  "Mode": "DEV",
   "CertificateLoc": "pancast.cert",
   "PrivateKeyLoc": "pancast.key",
   "PublicKeyLoc": "pancast.pubkey"

@@ -8,6 +8,7 @@ import (
 type StartParameters struct {
 	Address        string
 	Port           string
+	Mode           string
 	CertificateLoc string
 	PrivateKeyLoc  string
 	PublicKeyLoc   string
