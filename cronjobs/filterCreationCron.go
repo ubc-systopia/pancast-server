@@ -27,7 +27,7 @@ func CreateNewFilter(db *sql.DB, params DiffprivParameters) (*cuckoo.Filter, err
 		var ephID []byte
 		err := rows.Scan(&ephID)
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 		ephIDs = append(ephIDs, ephID)
 	}

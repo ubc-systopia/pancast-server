@@ -105,11 +105,13 @@ func (env *Env) RegisterNewDeviceIndex(w http.ResponseWriter, req *http.Request)
 	deviceType, err := strconv.ParseInt(req.FormValue("type"), 10, 32)
 	if err != nil || !isValidType(deviceType) {
 		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 	params, err := routes.RegisterController(deviceType, env.publicKeyLoc, env.db)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println(err.Error())
+		return
 	} else {
 		output, _ := params.ConvertToJSONString()
 		serverutils.Write(w, output)
@@ -124,13 +126,16 @@ func (env *Env) UploadRiskEncountersIndex(w http.ResponseWriter, req *http.Reque
 	body, errBody := ioutil.ReadAll(req.Body)
 	if errBody != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
-	input := routes.ConvertStringToUploadParam(body)
-	if !isValidDatabase(input.Type) {
+	input, err := routes.ConvertStringToUploadParam(body)
+	if err != nil || !isValidDatabase(input.Type) {
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 	if input.Type == 0 && !hasPermissionToUploadToRiskDatabase() {
 		w.WriteHeader(http.StatusForbidden)
+		return
 	} else {
 		err := routes.UploadController(input, env.db)
 		if err != nil {
@@ -169,8 +174,12 @@ func TelemetryWrapper(h http.Handler) http.Handler {
 		log.Println("Time elapsed: " + totalTime.String())
 		log.Println("Routed for " + req.URL.Path)
 		if req.URL.Path == "/upload" {
-			input := routes.ConvertStringToUploadParam(body)
-			log.Println("Number of ephemeral IDs submitted: " + strconv.Itoa(len(input.Entries)))
+			input, err := routes.ConvertStringToUploadParam(body)
+			if err == nil {
+				log.Println("Number of ephemeral IDs submitted: " + strconv.Itoa(len(input.Entries)))
+			} else {
+				log.Println("Bad request")
+			}
 		}
 	})
 }

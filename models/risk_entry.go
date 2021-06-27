@@ -16,7 +16,8 @@ func CreateRiskEntries(input []types.Entry, db *sql.DB) bool {
 	ctx := context.Background()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Failed to begin transaction")
+		return false
 	}
 	_, err = tx.ExecContext(ctx, statement)
 	log.Println(err)
@@ -39,7 +40,7 @@ func GetRiskEphIDs(db *sql.DB) *sql.Rows {
 		currentTime, serverutils.MINUTES_IN_14_DAYS)
 	rows, err := db.Query(query)
 	if err != nil {
-		log.Fatal(err)
+		log.Println("Error obtaining risk ephemeral IDs")
 	}
 	return rows
 }

@@ -89,11 +89,11 @@ func checkInputType(input string, inputType int) bool {
 	return true
 }
 
-func ConvertStringToUploadParam(input []byte) UploadParameters {
+func ConvertStringToUploadParam(input []byte) (UploadParameters, error) {
 	var entries UploadParameters
 	err := json.Unmarshal(input, &entries)
 	if err != nil {
-		log.Fatal(err)
+		return UploadParameters{}, err
 	}
-	return entries
+	return entries, nil
 }

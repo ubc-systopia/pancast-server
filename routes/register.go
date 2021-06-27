@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"log"
 	"pancast-server/models"
 	server_utils "pancast-server/server-utils"
 	"pancast-server/types"
@@ -117,7 +116,6 @@ func deviceDatabaseHandler(dType int64, params RegistrationParameters, db *sql.D
 func (r *RegistrationParameters) ConvertToJSONString() (string, error) {
 	output, err := json.Marshal(r)
 	if err != nil {
-		log.Fatal(err)
 		return "", err
 	}
 	return string(output), nil
