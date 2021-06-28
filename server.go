@@ -14,6 +14,7 @@ import (
 	"pancast-server/cronjobs"
 	"pancast-server/cuckoo"
 	"pancast-server/database"
+	"pancast-server/models"
 	"pancast-server/routes"
 	serverutils "pancast-server/server-utils"
 	"strconv"
@@ -68,10 +69,10 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	registerHandler := http.HandlerFunc(env.RegisterNewDeviceIndex)
 	uploadHandler := http.HandlerFunc(env.UploadRiskEncountersIndex)
 	updateHandler := http.HandlerFunc(env.UpdateRiskAssessmentIndex)
-	mux.Handle("/", TelemetryWrapper(basicHandler))
-	mux.Handle("/register", TelemetryWrapper(registerHandler))
-	mux.Handle("/upload", TelemetryWrapper(uploadHandler))
-	mux.Handle("/update", TelemetryWrapper(updateHandler))
+	mux.Handle("/", env.TelemetryWrapper(basicHandler))
+	mux.Handle("/register", env.TelemetryWrapper(registerHandler))
+	mux.Handle("/upload", env.TelemetryWrapper(uploadHandler))
+	mux.Handle("/update", env.TelemetryWrapper(updateHandler))
 	//http.HandleFunc("/", basic)
 	//http.HandleFunc("/register", env.RegisterNewDeviceIndex)
 	//http.HandleFunc("/upload", env.UploadRiskEncountersIndex)
@@ -163,7 +164,7 @@ func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Reque
 	}
 }
 
-func TelemetryWrapper(h http.Handler) http.Handler {
+func (env *Env) TelemetryWrapper(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		body, _ := ioutil.ReadAll(req.Body)
 		req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
@@ -173,13 +174,16 @@ func TelemetryWrapper(h http.Handler) http.Handler {
 		log.Println("Request received")
 		log.Println("Time elapsed: " + totalTime.String())
 		log.Println("Routed for " + req.URL.Path)
+		numEntries := -1
 		if req.URL.Path == "/upload" {
 			input, err := routes.ConvertStringToUploadParam(body)
 			if err == nil {
-				log.Println("Number of ephemeral IDs submitted: " + strconv.Itoa(len(input.Entries)))
+				numEntries = len(input.Entries)
+				log.Println("Number of ephemeral IDs submitted: " + strconv.Itoa(numEntries))
 			} else {
 				log.Println("Bad request")
 			}
 		}
+		models.CreateTelemetryEntry(totalTime.String(), req.URL.Path, numEntries, serverutils.GetCurrentMinuteStamp(), env.db)
 	})
 }
