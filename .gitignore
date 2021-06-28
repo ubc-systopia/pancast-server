@@ -5,3 +5,4 @@ pancast.cert
 pancast.pubkey
 .env
 config/app_config.json
+pancast.csr
