@@ -39,6 +39,7 @@ func CreateFilter(numBuckets int) (*Filter, error) {
 }
 
 func (cf *Filter) Insert(item []byte) bool {
+
 	index, fp := GetIndexAndFingerprint(item, cf.bucketMask)
 	if cf.Buckets[index].insert(fp) {
 		return true
@@ -70,15 +71,18 @@ func (b *Bucket) insert(fp Fingerprint) bool {
 }
 
 func (cf *Filter) reinsert(fp Fingerprint, alternateIndex uint) bool {
+	toInsert := fp
+	alternateIndexOfCurrentItem := alternateIndex
 	for i := 0; i < MAX_EVICTIONS; i++ { // maximum num of evictions before filter is 'full'
 		randomElementPosition := rand.Intn(BUCKET_SIZE)
-		toBeInserted := fp
-		randomElementEvicted := cf.Buckets[alternateIndex].Fp[randomElementPosition]
-		cf.Buckets[alternateIndex].Fp[randomElementPosition] = toBeInserted
-		randomElementAltIndex := GetAltIndex(randomElementEvicted, alternateIndex, cf.bucketMask)
+		randomElementEvicted := cf.Buckets[alternateIndexOfCurrentItem].Fp[randomElementPosition]
+		cf.Buckets[alternateIndexOfCurrentItem].Fp[randomElementPosition] = toInsert
+		randomElementAltIndex := GetAltIndex(randomElementEvicted, alternateIndexOfCurrentItem, cf.bucketMask)
 		if cf.Buckets[randomElementAltIndex].insert(randomElementEvicted) {
 			return true
 		}
+		toInsert = randomElementEvicted
+		alternateIndexOfCurrentItem = randomElementAltIndex
 		// keep trying to evict elements
 	}
 	return false // mission failed, shuffling elements around didn't work
@@ -132,7 +136,7 @@ func (cf *Filter) Encode() []byte {
 	remainderBits := int(FINGERPRINT_BITS - 8*math.Floor(FINGERPRINT_BITS/8)) // 8 to constant
 	for _, bucket := range cf.Buckets {
 		for _, fingerprint := range bucket.Fp {
-			arrayElements := FingerprintToByteArray(fingerprint)
+			arrayElements := FingerprintToByteArrayBigEndian(fingerprint)
 			arrayElements = ShiftByteArray(arrayElements)
 			for i, elToInsert := range arrayElements {
 				if i != BUCKET_SIZE-1 {

@@ -15,7 +15,10 @@ func IsPowerOfTwo(numBuckets int) bool {
 }
 
 func GetAltIndex(fp Fingerprint, index uint, bucketMask uint) uint {
-	hash := GetHash(FingerprintToByteArray(fp))
+	// when computing hash, we want to take the fingerprint in its little endian representation
+	// this is consistent with the way we calculate the hash of an item, which is natively
+	// represented as a little endian byte array
+	hash := GetHash(FingerprintToByteArrayLittleEndian(fp))
 	return uint(uint64(index)^hash) & bucketMask
 }
 
@@ -41,9 +44,15 @@ func GetIndexAndFingerprint(item []byte, bucketMask uint) (uint, Fingerprint) {
 	return i1, Fingerprint(fp)
 }
 
-func FingerprintToByteArray(item Fingerprint) []byte {
+func FingerprintToByteArrayBigEndian(item Fingerprint) []byte {
 	output := make([]byte, 4)
 	binary.BigEndian.PutUint32(output, uint32(item))
+	return output
+}
+
+func FingerprintToByteArrayLittleEndian(item Fingerprint) []byte {
+	output := make([]byte, 4)
+	binary.LittleEndian.PutUint32(output, uint32(item))
 	return output
 }
 

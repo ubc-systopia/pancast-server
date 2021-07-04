@@ -54,7 +54,7 @@ func TestGetAltIndex(t *testing.T) {
 
 //func TestWriteHalfway(t *testing.T) {
 //	arr := make([]byte, 8)
-//	elementsToInsert := FingerprintToByteArray(22180501)
+//	elementsToInsert := FingerprintToByteArrayBigEndian(22180501)
 //	shiftedElements := ShiftByteArray(elementsToInsert)
 //	arr = WriteByteToPositionAndBitOffset(arr, shiftedElements[0], 0, 4)
 //	arr = WriteByteToPositionAndBitOffset(arr, shiftedElements[1], 1, 4)
