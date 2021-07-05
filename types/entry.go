@@ -27,7 +27,7 @@ func ConcatEntries(input []Entry) string {
 func createEntries(input Entry) string {
 	decodedEphID, err := base64.StdEncoding.DecodeString(input.EphemeralID)
 	if err != nil {
-		decodedEphID = make([]byte, 0)
+		decodedEphID = []byte(input.EphemeralID)
 	}
 	return fmt.Sprintf("('%s', '%d', %d, %d, %d)", decodedEphID, input.LocationID,
 		input.DongleClock, input.BeaconClock, input.BeaconID)
