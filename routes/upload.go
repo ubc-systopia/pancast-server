@@ -22,6 +22,9 @@ func UploadController(input UploadParameters, db *sql.DB) error {
 		log.Println("error: unsafe or illegal input")
 		return errors.New("unsafe or illegal input")
 	}
+	if len(input.Entries) == 0 {
+		return errors.New("no ephemeral IDs to submit")
+	}
 	if input.Type == server_utils.RISK {
 		success := models.CreateRiskEntries(input.Entries, db)
 		if !success {
