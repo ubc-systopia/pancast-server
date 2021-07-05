@@ -1,0 +1,9 @@
+1. Generate your (certificate, public key, private key) set using the following commands:
+openssl req -x509 -newkey rsa:4096 -keyout pancast.key -out pancast.cert -days 365
+openssl x509 -pubkey -noout -in pancast.cert  > pancast.pubkey
+
+2. Create an app_config.json file from the template_app_config.json file in the /config folder.
+
+3. Create an .env file from the env.template file in the project root directory.
+
+4. You're all good! :)
