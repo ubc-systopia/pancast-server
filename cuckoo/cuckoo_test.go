@@ -133,8 +133,6 @@ func TestFilterDecode(t *testing.T) {
 	if !lookupResult {
 		t.Fatal("item should exist within filter")
 	}
-	newItem := []byte("00d17c102c46b0d")
-	newFilter.Lookup(newItem)
 }
 
 func TestFilterMassDecode(t *testing.T) {
@@ -145,38 +143,16 @@ func TestFilterMassDecode(t *testing.T) {
 	}
 	testCases := make([][]byte, NumCases)
 	for i, _ := range testCases {
-		if i == 278 {
-			log.Print("a")
-		}
 		testCases[i] = make([]byte, 15)
 		rand.Read(testCases[i])
 		cf.Insert(testCases[i])
-	}
-	for _, el := range cf.Buckets {
-		for _, entry := range el.Fp {
-			if entry == 3071836 {
-				log.Print("a")
-			}
-		}
 	}
 	byteArray := cf.Encode()
 	newCF, err := Decode(byteArray)
 	if err != nil {
 		t.Fatal("decode error")
 	}
-
-	for _, el := range newCF.Buckets {
-		for _, entry := range el.Fp {
-			if entry == 3071836 {
-				_ = 1
-			}
-		}
-	}
-
 	for _, c := range testCases {
-		//if i == 260 {
-		//	_ = i
-		//}
 		result := newCF.Lookup(c)
 		if !result {
 			t.Fatal("item should have been found")
