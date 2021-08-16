@@ -54,7 +54,7 @@ func CreateNewFilter(db *sql.DB, params DiffprivParameters) (*cuckoo.Filter, err
 	//}
 	//length += testCount
 
-	baseLength := server_utils.NextPowerOfTwo(length) / 4
+	baseLength := server_utils.ClosestPowerOfTwo(length) / 4
 	if baseLength < 4 {
 		baseLength = 4
 	}
