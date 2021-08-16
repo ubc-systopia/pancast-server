@@ -56,6 +56,7 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 			Delta:       delta,
 		},
 	}
+
 	// initialize filter on startup
 	newFilter, err := cronjobs.CreateNewFilter(env.db, env.privacyParams) // create filter on startup for now
 	if err != nil {
@@ -73,20 +74,17 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	mux.Handle("/register", env.TelemetryWrapper(registerHandler))
 	mux.Handle("/upload", env.TelemetryWrapper(uploadHandler))
 	mux.Handle("/update", env.TelemetryWrapper(updateHandler))
-	//http.HandleFunc("/", basic)
-	//http.HandleFunc("/register", env.RegisterNewDeviceIndex)
-	//http.HandleFunc("/upload", env.UploadRiskEncountersIndex)
-	//http.HandleFunc("/update", env.UpdateRiskAssessmentIndex)
 
 	// initialize cron job
 	c := cron.New()
-	_, err = c.AddFunc("@daily", func() { // starts from the moment this is invoked
+	_, err = c.AddFunc("@midnight", func() { // starts from the moment this is invoked
 		newFilter, err = cronjobs.CreateNewFilter(env.db, env.privacyParams)
 		if err != nil {
 			log.Println("error updating cuckoo filter")
 		}
 		env.cf = newFilter
 	})
+	c.Start()
 	if err != nil {
 		log.Println("error creating cron job")
 	}

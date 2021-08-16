@@ -21,7 +21,6 @@ func CreateNewFilter(db *sql.DB, params DiffprivParameters) (*cuckoo.Filter, err
 	length := models.GetNumOfRecentRiskEphIDs(db)
 	// division by 4 is because there are 4 entries per bucket, and therefore
 	// the filter can hold 4 * baseLength entries
-	baseLength := server_utils.NextPowerOfTwo(length) / 4
 	var ephIDs [][]byte
 	for rows.Next() {
 		var ephID []byte
@@ -41,6 +40,21 @@ func CreateNewFilter(db *sql.DB, params DiffprivParameters) (*cuckoo.Filter, err
 		}
 		ephIDs = append(ephIDs, dummy)
 	}
+	length += int(junkCount)
+
+	// Stress test filter by adding lots of new numbers
+	//testCount := int(math.Pow(2, 25))
+	//for i := 0; i < testCount; i++ {
+	//	dummy, err := server_utils.GenerateRandomByteString(15)
+	//	if err != nil {
+	//		log.Println(err)
+	//		break
+	//	}
+	//	ephIDs = append(ephIDs, dummy)
+	//}
+	//length += testCount
+
+	baseLength := server_utils.NextPowerOfTwo(length) / 4
 	if baseLength < 4 {
 		baseLength = 4
 	}

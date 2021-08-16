@@ -10,7 +10,7 @@ import (
 )
 
 func CreateRiskEntries(input []types.Entry, db *sql.DB) bool {
-	query := "INSERT INTO risk_entries VALUES %s;"
+	query := "INSERT INTO risk_entries (eph_id, location_id, time_beacon, time_dongle, beacon_id) VALUES %s AS new ON DUPLICATE KEY UPDATE time_dongle = new.time_dongle, time_beacon = new.time_beacon;"
 	values := types.ConcatEntries(input)
 	statement := fmt.Sprintf(query, values)
 	ctx := context.Background()

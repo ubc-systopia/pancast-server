@@ -3,6 +3,7 @@ package cuckoo
 import (
 	"github.com/stretchr/testify/assert"
 	"log"
+	"math"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -160,12 +161,14 @@ func TestFilterMassDecode(t *testing.T) {
 	}
 }
 
+
 func TestFilterBatchInsertAndLookup(t *testing.T) {
-	NumCases := 300
+	//NumCases := 300
+	NumCases := int(math.Pow(2, 20)) // roughly one million
 	insertFailCount := 0
 	lookupFailCount := 0
 	erroneousLookupFailCount := 0
-	cf, err := CreateFilter(TEST_NUM_BUCKETS << 2)
+	cf, err := CreateFilter(TEST_NUM_BUCKETS << 13)
 	if err != nil {
 		t.Fatal("filter creation error")
 	}
@@ -204,5 +207,4 @@ func TestFilterBatchInsertAndLookup(t *testing.T) {
 	log.Printf("Insert failed %d times\n", insertFailCount)
 	log.Printf("Lookup failed %d times\n", lookupFailCount)
 	log.Printf("Encountered false positive %d times\n", erroneousLookupFailCount)
-
 }
