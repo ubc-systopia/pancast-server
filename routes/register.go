@@ -35,6 +35,7 @@ func RegisterController(deviceType int64, keyLoc string, db *sql.DB) (Registrati
 	if err != nil {
 		return RegistrationParameters{}, err
 	}
+
 	output.ServerKey = string(key)
 
 	// compute current time
