@@ -1,5 +1,9 @@
 package server
 
+/*
+	Server code. Starts the server, sets handlers for HTTPS routes, listens on a part and sleeps.
+ */
+
 import (
 	"bytes"
 	"database/sql"
@@ -24,6 +28,7 @@ import (
 type Env struct {
 	db             *sql.DB
 	cf             *cuckoo.Filter
+	mode           []string
 	certificateLoc string
 	privateKeyLoc  string
 	publicKeyLoc   string
@@ -42,10 +47,12 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	sens, _ := strconv.ParseFloat(os.Getenv("SENS"), 64)
 	epsilon, _ := strconv.ParseFloat(os.Getenv("EPSILON"), 64)
 	delta, _ := strconv.ParseFloat(os.Getenv("DELTA"), 64)
+	mode := config.GetApplicationMode(conf)
 
 	env := &Env{
 		db:             db,
 		cf:             nil,
+		mode:			mode,
 		certificateLoc: conf.CertificateLoc,
 		privateKeyLoc:  conf.PrivateKeyLoc,
 		publicKeyLoc:   conf.PublicKeyLoc,
@@ -58,7 +65,7 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	}
 
 	// initialize filter on startup
-	newFilter, err := cronjobs.CreateNewFilter(env.db, env.privacyParams) // create filter on startup for now
+	newFilter, err := cronjobs.CreateNewFilter(env.db, env.privacyParams, env.mode) // create filter on startup for now
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -78,7 +85,7 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	// initialize cron job
 	c := cron.New()
 	_, err = c.AddFunc("@midnight", func() { // starts from the moment this is invoked
-		newFilter, err = cronjobs.CreateNewFilter(env.db, env.privacyParams)
+		newFilter, err = cronjobs.CreateNewFilter(env.db, env.privacyParams, env.mode)
 		if err != nil {
 			log.Println("error updating cuckoo filter")
 		}

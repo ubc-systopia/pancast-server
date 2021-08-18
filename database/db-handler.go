@@ -1,5 +1,9 @@
 package database
 
+/*
+	This file contains database connection logic.
+ */
+
 import (
 	"database/sql"
 	"flag"

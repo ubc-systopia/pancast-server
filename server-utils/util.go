@@ -1,9 +1,14 @@
 package server_utils
 
+/*
+	Utilities file. Contains all sorts of utility functions
+ */
+
 import (
 	cryptorand "crypto/rand"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"golang.org/x/exp/rand"
@@ -22,9 +27,9 @@ func Write(res http.ResponseWriter, output string) {
 	}
 }
 
-func ClosestPowerOfTwo(num int) int {
+func LowerPowerOfTwo(num int) int {
 	logVal := math.Log2(float64(num))
-	exponent := math.Ceil(logVal) + 1
+	exponent := math.Ceil(logVal)
 	return int(math.Pow(2, exponent))
 }
 
@@ -120,4 +125,22 @@ func DecodeBase64ToByteArray(base64input string) ([]byte, error) {
 		return nil, err
 	}
 	return output, nil
+}
+
+
+func ByteSlicesToHexString(byteArray [][]byte) string {
+	finalString := ""
+	for _, ephemeralID := range byteArray {
+		finalString = finalString + hex.EncodeToString(ephemeralID) + "\n"
+	}
+	return finalString
+}
+
+func StringSliceContains(s []string, i string) bool {
+	for _, item := range s {
+		if item == i {
+			return true
+		}
+	}
+	return false
 }

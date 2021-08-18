@@ -1,5 +1,9 @@
 package routes
 
+/*
+Controller for the /update route.
+*/
+
 import (
 	"encoding/binary"
 	"pancast-server/cuckoo"

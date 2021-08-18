@@ -1,5 +1,9 @@
 package main
 
+/*
+	Entry point of application
+ */
+
 import (
 	"context"
 	"fmt"

@@ -1,5 +1,9 @@
 package routes
 
+/*
+Controller for the /register route.
+ */
+
 import (
 	"context"
 	"database/sql"

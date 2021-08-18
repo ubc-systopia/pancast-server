@@ -1,5 +1,9 @@
 package routes
 
+/*
+Controller for the /upload route.
+*/
+
 import (
 	"database/sql"
 	"encoding/json"

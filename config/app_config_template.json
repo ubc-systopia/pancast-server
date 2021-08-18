@@ -1,7 +1,7 @@
 {
   "Address": "",
   "Port": "8081",
-  "Mode": "DEV",
+  "Mode": ["CUCKOO_USE_DATABASE"],
   "CertificateLoc": "pancast.cert",
   "PrivateKeyLoc": "pancast.key",
   "PublicKeyLoc": "pancast.pubkey"
