@@ -1,8 +1,8 @@
 package cuckoo
 
 import (
+	"crypto/sha256"
 	"encoding/binary"
-	"github.com/dgryski/go-metro"
 	"math"
 )
 
@@ -31,7 +31,9 @@ func GetFingerprint(hash uint64) uint32 {
 }
 
 func GetHash(item []byte) uint64 {
-	return metro.Hash64(item, 1337)
+	hash := sha256.Sum256(item)
+	// TODO: convert to little endian for SoC decode
+	return binary.LittleEndian.Uint64(hash[:])
 }
 
 //
