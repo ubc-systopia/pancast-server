@@ -2,7 +2,7 @@ package server_utils
 
 /*
 	Utilities file. Contains all sorts of utility functions
- */
+*/
 
 import (
 	cryptorand "crypto/rand"
@@ -34,35 +34,28 @@ func LowerPowerOfTwo(num int) int {
 }
 
 func GetIncrementUnit(num int, granularity int) int {
-	exponent := math.Floor(math.Log2(float64(num))) - float64(granularity)
-	return int(math.Pow(2, exponent))
+	return num
 }
 
-func DeriveNextSize(num int) int {
-	/*
-		granularity controls the 'speed' at which the cuckoo filter increment
-		at a speed of 0, we will increment our number once to get 2*num (each addition is the same as the other)
-		at a speed of 1, we will increment our number twice to get 2*num (each addition is the same as the other)
-		at a speed of 2, we will increment our number 4 times to get 2*num (each addition is the same as the other)
-		this is assuming that num is a power of 2. if not, then we find its lower power of 2 (let this be k)
-		then, we will increment num by k / (2 ^ speed)
-	*/
-	unit := GetIncrementUnit(num, 2)
-	return num + unit
+func NextPowerOfTwo(num int) int {
+	exponent := math.Floor(math.Log2(float64(num)))
+	return int(math.Pow(2, exponent+1))
+
 }
 
-func AllocateFilter(initSize int, ephIDs [][]byte) (*cuckoo.Filter, error) {
-	if initSize > int(math.Pow(2, EXPONENT_TOO_LARGE)) {
+func AllocateFilter(initNumBuckets int, ephIDs [][]byte) (*cuckoo.Filter, error) {
+	log.Println(initNumBuckets)
+	if initNumBuckets > int(math.Pow(2, EXPONENT_TOO_LARGE)) {
 		return nil, errors.New("filter has grown too large")
 	}
-	filter, err := cuckoo.CreateFilter(initSize)
+	filter, err := cuckoo.CreateFilter(initNumBuckets)
 	if err != nil {
 		return nil, err
 	}
 	for _, ephID := range ephIDs {
 		result := filter.Insert(ephID)
 		if !result {
-			return AllocateFilter(DeriveNextSize(initSize), ephIDs)
+			return AllocateFilter(NextPowerOfTwo(initNumBuckets), ephIDs)
 		}
 	}
 	// success
@@ -126,7 +119,6 @@ func DecodeBase64ToByteArray(base64input string) ([]byte, error) {
 	}
 	return output, nil
 }
-
 
 func ByteSlicesToHexString(byteArray [][]byte) string {
 	finalString := ""

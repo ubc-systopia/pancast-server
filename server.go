@@ -2,7 +2,7 @@ package server
 
 /*
 	Server code. Starts the server, sets handlers for HTTPS routes, listens on a part and sleeps.
- */
+*/
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
@@ -28,6 +29,7 @@ import (
 type Env struct {
 	db             *sql.DB
 	cf             *cuckoo.Filter
+	cfChunks       []*cuckoo.Filter
 	mode           []string
 	certificateLoc string
 	privateKeyLoc  string
@@ -41,6 +43,7 @@ func basic(w http.ResponseWriter, req *http.Request) {
 
 func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signal) {
 	// initialization
+	rand.Seed(time.Now().UnixNano()) // ssssssecretsssss
 	db := database.InitDatabaseConnection()
 	serverURL := config.GetServerURL(conf)
 	mean, _ := strconv.Atoi(os.Getenv("MEAN"))
@@ -52,7 +55,8 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	env := &Env{
 		db:             db,
 		cf:             nil,
-		mode:			mode,
+		cfChunks:       nil,
+		mode:           mode,
 		certificateLoc: conf.CertificateLoc,
 		privateKeyLoc:  conf.PrivateKeyLoc,
 		publicKeyLoc:   conf.PublicKeyLoc,
@@ -70,6 +74,11 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 		log.Fatal(err)
 	}
 	env.cf = newFilter
+	chunks, err := cronjobs.CreateChunkedFilters(env.db, env.privacyParams, env.mode)
+	if err != nil {
+		log.Fatal(err)
+	}
+	env.cfChunks = chunks
 
 	// initialize routes
 	mux := http.NewServeMux()
@@ -77,10 +86,12 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	registerHandler := http.HandlerFunc(env.RegisterNewDeviceIndex)
 	uploadHandler := http.HandlerFunc(env.UploadRiskEncountersIndex)
 	updateHandler := http.HandlerFunc(env.UpdateRiskAssessmentIndex)
+	updateCountHandler := http.HandlerFunc(env.UpdateRiskAssessmentGetCountIndex)
 	mux.Handle("/", env.TelemetryWrapper(basicHandler))
 	mux.Handle("/register", env.TelemetryWrapper(registerHandler))
 	mux.Handle("/upload", env.TelemetryWrapper(uploadHandler))
 	mux.Handle("/update", env.TelemetryWrapper(updateHandler))
+	mux.Handle("/update/count", updateCountHandler)
 
 	// initialize cron job
 	c := cron.New()
@@ -90,6 +101,11 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 			log.Println("error updating cuckoo filter")
 		}
 		env.cf = newFilter
+		newChunks, err := cronjobs.CreateChunkedFilters(env.db, env.privacyParams, env.mode)
+		if err != nil {
+			log.Fatal(err)
+		}
+		env.cfChunks = newChunks
 	})
 	c.Start()
 	if err != nil {
@@ -162,8 +178,31 @@ func hasPermissionToUploadToRiskDatabase() bool {
 }
 
 func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Request) {
-	ba := routes.UpdateController(env.cf)
-	_, err := w.Write(ba)
+	rawNum := req.URL.Query().Get("chunk")
+	if rawNum != "" {
+		num, err := strconv.Atoi(rawNum)
+		if err != nil {
+			log.Println(err)
+			return
+		} else {
+			ba := routes.UpdateControllerGetChunk(env.cfChunks, num)
+			_, err := w.Write(ba)
+			if err != nil {
+				log.Println(err)
+			}
+		}
+	} else {
+		ba := routes.UpdateController(env.cf)
+		_, err := w.Write(ba)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+}
+
+func (env *Env) UpdateRiskAssessmentGetCountIndex(w http.ResponseWriter, req *http.Request) {
+	count := routes.UpdateControllerGetCount(env.cfChunks)
+	_, err := w.Write([]byte(strconv.Itoa(count)))
 	if err != nil {
 		log.Println(err)
 	}

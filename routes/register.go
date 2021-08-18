@@ -2,7 +2,7 @@ package routes
 
 /*
 Controller for the /register route.
- */
+*/
 
 import (
 	"context"

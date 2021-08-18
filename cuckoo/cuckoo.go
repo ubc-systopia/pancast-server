@@ -4,7 +4,7 @@ package cuckoo
 	An implementation of a Cuckoo filter, based off of https://github.com/seiflotfy/cuckoofilter
 	Main addition is the efficient CF export functionality
 	Intended recipient for this exported filter are the dongle devices
- */
+*/
 
 import (
 	"errors"
@@ -28,9 +28,10 @@ func CreateFilter(numBuckets int) (*Filter, error) {
 	if numBuckets == 0 {
 		return nil, errors.New("cannot have zero Buckets")
 	}
-	//if !IsPowerOfTwo(numBuckets) {
-	//	return nil, errors.New("Buckets is not a power of 2")
-	//}
+	if !IsPowerOfTwo(numBuckets) {
+		// if not a power of 2, then it introduces a bias in the distribution of hashes
+		return nil, errors.New("bucket number not a power of 2")
+	}
 	var tempFilter []Bucket
 	for i := 0; i < numBuckets; i++ {
 		var bkt Bucket
@@ -45,7 +46,6 @@ func CreateFilter(numBuckets int) (*Filter, error) {
 }
 
 func (cf *Filter) Insert(item []byte) bool {
-
 	index, fp := GetIndexAndFingerprint(item, cf.bucketMask)
 	if cf.Buckets[index].insert(fp) {
 		return true

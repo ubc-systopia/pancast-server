@@ -161,7 +161,6 @@ func TestFilterMassDecode(t *testing.T) {
 	}
 }
 
-
 func TestFilterBatchInsertAndLookup(t *testing.T) {
 	//NumCases := 300
 	NumCases := int(math.Pow(2, 20)) // roughly one million

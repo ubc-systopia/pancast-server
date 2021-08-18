@@ -3,7 +3,7 @@ package config
 /*
 	This file and app_config.json govern application behavior.
 	Not to be confused with the .env file, which contains information considered secret
- */
+*/
 
 import (
 	"encoding/json"
