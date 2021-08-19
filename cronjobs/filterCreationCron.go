@@ -42,7 +42,7 @@ func CreateNewFilter(db *sql.DB, params DiffprivParameters, mode []string) (*cuc
 	}
 	// generating a known amount of entries
 	if server_utils.StringSliceContains(mode, "CUCKOO_FIXED_ITEMS") {
-		fixedCount := 468 // 95% of 512
+		fixedCount := 10 // 95% of 512
 		for i := 0; i < fixedCount; i++ {
 			dummy, err := server_utils.GenerateRandomByteString(15)
 			if err != nil {
@@ -52,7 +52,7 @@ func CreateNewFilter(db *sql.DB, params DiffprivParameters, mode []string) (*cuc
 			ephIDs = append(ephIDs, dummy)
 		}
 		listOfEphemeralIDs := server_utils.ByteSlicesToHexString(ephIDs)
-		f, _ := os.Create("ephid_list.txt")
+		f, _ := os.Create("ephid_list_whole.txt")
 		_, _ = f.WriteString(listOfEphemeralIDs)
 		length += fixedCount
 		log.Printf("(DEV) Fixed number of ephemeral IDs generated: %d", fixedCount)
@@ -109,7 +109,7 @@ func CreateChunkedFilters(db *sql.DB, params DiffprivParameters, mode []string) 
 	}
 	// generating a known amount of entries
 	if server_utils.StringSliceContains(mode, "CUCKOO_FIXED_ITEMS") {
-		fixedCount := 468 // 95% of 512
+		fixedCount := 10 // 95% of 512
 		for i := 0; i < fixedCount; i++ {
 			dummy, err := server_utils.GenerateRandomByteString(15)
 			if err != nil {
@@ -119,7 +119,7 @@ func CreateChunkedFilters(db *sql.DB, params DiffprivParameters, mode []string) 
 			ephIDs = append(ephIDs, dummy)
 		}
 		listOfEphemeralIDs := server_utils.ByteSlicesToHexString(ephIDs)
-		f, _ := os.Create("ephid_list.txt")
+		f, _ := os.Create("ephid_list_chunked.txt")
 		_, _ = f.WriteString(listOfEphemeralIDs)
 		length += fixedCount
 		log.Printf("(DEV) Fixed number of ephemeral IDs generated: %d", fixedCount)

@@ -3,7 +3,7 @@ pancast.key
 pancast.cert
 .env
 pancast.pubkey
-.env
 config/app_config.json
 pancast.csr
 ephid_list.txt
+*.txt

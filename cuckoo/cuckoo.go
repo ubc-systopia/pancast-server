@@ -47,6 +47,10 @@ func CreateFilter(numBuckets int) (*Filter, error) {
 
 func (cf *Filter) Insert(item []byte) bool {
 	index, fp := GetIndexAndFingerprint(item, cf.bucketMask)
+	//log.Println("First index")
+	//log.Println(index)
+	//log.Println("Second index")
+	//log.Println(GetAltIndex(fp, index, cf.bucketMask))
 	if cf.Buckets[index].insert(fp) {
 		return true
 	}
