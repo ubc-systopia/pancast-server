@@ -26,8 +26,8 @@ func UpdateController(cf *cuckoo.Filter) []byte {
 	return payload
 }
 
-func UpdateControllerGetCount(chunks []*cuckoo.Filter) int {
-	return len(chunks)
+func UpdateControllerGetCount(chunks []*cuckoo.Filter) byte {
+	return byte(len(chunks))
 }
 
 func UpdateControllerGetChunk(chunks []*cuckoo.Filter, num int) []byte {
