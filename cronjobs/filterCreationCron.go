@@ -74,7 +74,7 @@ func GenerateEphemeralIDList(db *sql.DB, params DiffprivParameters, mode []strin
 		f, _ := os.Create("ephid_list.txt")
 		_, _ = f.WriteString(server_utils.ByteSlicesToHexString(ephIDs))
 	}
-	return ephIDs, length
+	return server_utils.ShuffleByteArray(ephIDs), length
 }
 
 func CreateNewFilter(ephIDs [][]byte, length int) (*cuckoo.Filter, error) {
@@ -84,7 +84,7 @@ func CreateNewFilter(ephIDs [][]byte, length int) (*cuckoo.Filter, error) {
 
 	// tries to create a filter, doubling in size if not possible, and ultimately terminating
 	// once the filter becomes too big to be feasibly transferred.
-	filter, err := server_utils.AllocateFilter(numBuckets, server_utils.ShuffleByteArray(ephIDs))
+	filter, err := server_utils.AllocateFilter(numBuckets, ephIDs)
 	if err != nil {
 		log.Println(err)
 		filter, _ = cuckoo.CreateFilter(4) // dummy var
