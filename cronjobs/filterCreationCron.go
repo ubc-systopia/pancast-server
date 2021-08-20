@@ -56,7 +56,7 @@ func GenerateEphemeralIDList(db *sql.DB, params DiffprivParameters, mode []strin
 	}
 
 	// sample random variable from Laplacian distribution, and create dummy ephemeral IDs
-	if server_utils.StringSliceContains(mode, "CUCKOO_NODIFF") {
+	if !server_utils.StringSliceContains(mode, "CUCKOO_NODIFF") {
 		junkCount := server_utils.SampleLaplacianDistribution(params.Mean, params.Sensitivity, params.Epsilon, params.Delta)
 		for i := int64(0); i < junkCount; i++ {
 			dummy, err := server_utils.GenerateRandomByteString(15)

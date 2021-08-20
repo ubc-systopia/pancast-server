@@ -25,10 +25,10 @@ type RegistrationParameters struct {
 	LocationID uint64
 }
 
-func RegisterController(deviceType int64, keyLoc string, db *sql.DB) (RegistrationParameters, error) {
+func RegisterController(deviceType int64, deviceLocation string, keyLoc string, db *sql.DB) (RegistrationParameters, error) {
 	var output RegistrationParameters
 	// temporary placeholder for location
-	tempBeaconLocation := []byte("LOCATION")
+	tempBeaconLocation := []byte(deviceLocation)
 	output.LocationID = binary.LittleEndian.Uint64(tempBeaconLocation)
 
 	// temporary placeholder for OTPs

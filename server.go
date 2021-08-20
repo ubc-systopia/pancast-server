@@ -38,7 +38,9 @@ type Env struct {
 }
 
 func basic(w http.ResponseWriter, req *http.Request) {
-	serverutils.Write(w, "Welcome")
+	serverutils.Write(w, "Goodbye")
+	w.WriteHeader(http.StatusBadRequest)
+	return
 }
 
 func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signal) {
@@ -131,7 +133,8 @@ func (env *Env) RegisterNewDeviceIndex(w http.ResponseWriter, req *http.Request)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	params, err := routes.RegisterController(deviceType, env.publicKeyLoc, env.db)
+	deviceLocation := req.FormValue("location")
+	params, err := routes.RegisterController(deviceType, deviceLocation, env.publicKeyLoc, env.db)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println(err.Error())
