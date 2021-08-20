@@ -204,7 +204,7 @@ func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Reque
 
 func (env *Env) UpdateRiskAssessmentGetCountIndex(w http.ResponseWriter, req *http.Request) {
 	count := routes.UpdateControllerGetCount(env.cfChunks)
-	_, err := w.Write([]byte{count})
+	_, err := w.Write(count)
 	if err != nil {
 		log.Println(err)
 	}

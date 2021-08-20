@@ -26,8 +26,10 @@ func UpdateController(cf *cuckoo.Filter) []byte {
 	return payload
 }
 
-func UpdateControllerGetCount(chunks []*cuckoo.Filter) byte {
-	return byte(len(chunks))
+func UpdateControllerGetCount(chunks []*cuckoo.Filter) []byte {
+	count := make([]byte, 4)
+	binary.LittleEndian.PutUint32(count, uint32(len(chunks)))
+	return count
 }
 
 func UpdateControllerGetChunk(chunks []*cuckoo.Filter, num int) []byte {
