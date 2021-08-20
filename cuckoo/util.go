@@ -3,7 +3,6 @@ package cuckoo
 import (
 	"crypto/sha256"
 	"encoding/binary"
-	"log"
 	"math"
 )
 
@@ -42,7 +41,6 @@ func GetHash(item []byte) uint32 {
 func GetIndexAndFingerprint(item []byte, bucketMask uint) (uint, Fingerprint) {
 	hash := GetHash(item)
 	fp := GetFingerprint(hash)
-	log.Println(fp)
 	// Use least significant bits for deriving index.
 	i1 := uint(hash & uint32(bucketMask))
 	return i1, Fingerprint(fp)
