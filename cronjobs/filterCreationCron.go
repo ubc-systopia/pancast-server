@@ -21,7 +21,7 @@ type DiffprivParameters struct {
 	Delta       float64
 }
 
-func CreateNewFilter(db *sql.DB, params DiffprivParameters, mode []string) (*cuckoo.Filter, error) {
+func GenerateEphemeralIDList(db *sql.DB, params DiffprivParameters, mode []string) ([][]byte, int) {
 	var ephIDs [][]byte
 	length := 0
 	// get data to be broadcast
@@ -35,7 +35,7 @@ func CreateNewFilter(db *sql.DB, params DiffprivParameters, mode []string) (*cuc
 			var ephID []byte
 			err := rows.Scan(&ephID)
 			if err != nil {
-				return nil, err
+				return nil, 0
 			}
 			ephIDs = append(ephIDs, ephID)
 		}
@@ -51,9 +51,6 @@ func CreateNewFilter(db *sql.DB, params DiffprivParameters, mode []string) (*cuc
 			}
 			ephIDs = append(ephIDs, dummy)
 		}
-		listOfEphemeralIDs := server_utils.ByteSlicesToHexString(ephIDs)
-		f, _ := os.Create("ephid_list_whole.txt")
-		_, _ = f.WriteString(listOfEphemeralIDs)
 		length += fixedCount
 		log.Printf("(DEV) Fixed number of ephemeral IDs generated: %d", fixedCount)
 	}
@@ -72,6 +69,15 @@ func CreateNewFilter(db *sql.DB, params DiffprivParameters, mode []string) (*cuc
 		length += int(junkCount)
 		log.Printf("Number of ephemeral IDs generated: %d", junkCount)
 	}
+
+	if server_utils.StringSliceContains(mode, "CUCKOO_LOG_EPHIDS") {
+		f, _ := os.Create("ephid_list.txt")
+		_, _ = f.WriteString(server_utils.ByteSlicesToHexString(ephIDs))
+	}
+	return ephIDs, length
+}
+
+func CreateNewFilter(ephIDs [][]byte, length int) (*cuckoo.Filter, error) {
 
 	numBuckets := length / 4 // division by 4 because each bucket can hold 4 ephemeral IDs
 	numBuckets = server_utils.NextPowerOfTwo(numBuckets)
@@ -87,60 +93,9 @@ func CreateNewFilter(db *sql.DB, params DiffprivParameters, mode []string) (*cuc
 	return filter, err
 }
 
-func CreateChunkedFilters(db *sql.DB, params DiffprivParameters, mode []string) ([]*cuckoo.Filter, error) {
+
+func CreateChunkedFilters(ephIDs [][]byte, length int) ([]*cuckoo.Filter, error) {
 	var chunks []*cuckoo.Filter
-	var ephIDs [][]byte
-	length := 0
-	// get data to be broadcast
-
-	if server_utils.StringSliceContains(mode, "CUCKOO_USE_DATABASE") {
-		rows := models.GetRiskEphIDs(db)
-		length += models.GetNumOfRecentRiskEphIDs(db)
-		// division by 4 is because there are 4 entries per bucket, and therefore
-		// the filter can hold 4 * baseLength entries
-		for rows.Next() {
-			var ephID []byte
-			err := rows.Scan(&ephID)
-			if err != nil {
-				return nil, err
-			}
-			ephIDs = append(ephIDs, ephID)
-		}
-	}
-	// generating a known amount of entries
-	if server_utils.StringSliceContains(mode, "CUCKOO_FIXED_ITEMS") {
-		fixedCount := 10 // 95% of 512
-		for i := 0; i < fixedCount; i++ {
-			dummy, err := server_utils.GenerateRandomByteString(15)
-			if err != nil {
-				log.Println(err)
-				break
-			}
-			ephIDs = append(ephIDs, dummy)
-		}
-		listOfEphemeralIDs := server_utils.ByteSlicesToHexString(ephIDs)
-		f, _ := os.Create("ephid_list_chunked.txt")
-		_, _ = f.WriteString(listOfEphemeralIDs)
-		length += fixedCount
-		log.Printf("(DEV) Fixed number of ephemeral IDs generated: %d", fixedCount)
-	}
-
-	// sample random variable from Laplacian distribution, and create dummy ephemeral IDs
-	if server_utils.StringSliceContains(mode, "CUCKOO_NODIFF") {
-		junkCount := server_utils.SampleLaplacianDistribution(params.Mean, params.Sensitivity, params.Epsilon, params.Delta)
-		for i := int64(0); i < junkCount; i++ {
-			dummy, err := server_utils.GenerateRandomByteString(15)
-			if err != nil {
-				log.Println(err)
-				break
-			}
-			ephIDs = append(ephIDs, dummy)
-		}
-		length += int(junkCount)
-		log.Printf("Number of ephemeral IDs generated: %d", junkCount)
-	}
-
-
 	for length > 0 {
 		// create a chunk
 		currentEphIDInChunk := server_utils.MAX_CHUNK_EPHID_COUNT

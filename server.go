@@ -69,12 +69,13 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	}
 
 	// initialize filter on startup
-	newFilter, err := cronjobs.CreateNewFilter(env.db, env.privacyParams, env.mode) // create filter on startup for now
+	ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db, env.privacyParams, env.mode)
+	newFilter, err := cronjobs.CreateNewFilter(ephIDs, length) // create filter on startup for now
 	if err != nil {
 		log.Fatal(err)
 	}
 	env.cf = newFilter
-	chunks, err := cronjobs.CreateChunkedFilters(env.db, env.privacyParams, env.mode)
+	chunks, err := cronjobs.CreateChunkedFilters(ephIDs, length)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -96,12 +97,13 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	// initialize cron job
 	c := cron.New()
 	_, err = c.AddFunc("@midnight", func() { // starts from the moment this is invoked
-		newFilter, err = cronjobs.CreateNewFilter(env.db, env.privacyParams, env.mode)
+		ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db, env.privacyParams, env.mode)
+		newFilter, err = cronjobs.CreateNewFilter(ephIDs, length)
 		if err != nil {
 			log.Println("error updating cuckoo filter")
 		}
 		env.cf = newFilter
-		newChunks, err := cronjobs.CreateChunkedFilters(env.db, env.privacyParams, env.mode)
+		newChunks, err := cronjobs.CreateChunkedFilters(ephIDs, length)
 		if err != nil {
 			log.Fatal(err)
 		}

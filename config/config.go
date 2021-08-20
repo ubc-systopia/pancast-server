@@ -35,7 +35,7 @@ func GetServerURL(conf StartParameters) string {
 	return conf.Address + ":" + conf.Port
 }
 
-// Current modes: CUCKOO_NODIFF, CUCKOO_FIXED_ITEMS, CUCKOO_USE_DATABASE
+// Current modes: CUCKOO_NODIFF, CUCKOO_FIXED_ITEMS, CUCKOO_USE_DATABASE, CUCKOO_LOG_EPHIDS
 func GetApplicationMode(conf StartParameters) []string {
 	return conf.Mode
 }
