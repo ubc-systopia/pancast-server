@@ -19,21 +19,21 @@ func GetAltIndex(fp Fingerprint, index uint, bucketMask uint) uint {
 	// this is consistent with the way we calculate the hash of an item, which is natively
 	// represented as a little endian byte array
 	hash := GetHash(FingerprintToByteArrayLittleEndian(fp))
-	return uint(uint32(index)^hash) & bucketMask
+	return uint(uint64(index)^hash) & bucketMask
 }
 
-func GetFingerprint(hash uint32) uint32 {
+func GetFingerprint(hash uint64) uint32 {
 	// Use least significant bits for fingerprint.
 	// Range of FP is [1, MAX_VALUE_THAT_27_BITS_CAN_REPRESENT]
-	FingerprintMask := uint32(math.Pow(2, FINGERPRINT_BITS)) - 1
-	fp := (hash % (FingerprintMask - 1)) + 1
+	FingerprintMask := uint64(math.Pow(2, FINGERPRINT_BITS)) - 1
+	fp := uint32((hash % (FingerprintMask - 1)) + 1)
 	return fp
 }
 
-func GetHash(item []byte) uint32 {
+func GetHash(item []byte) uint64 {
 	hash := sha256.Sum256(item)
-	// the dummy value hash
-	return binary.LittleEndian.Uint32(hash[:4])
+	// TODO: convert to little endian for SoC decode
+	return binary.LittleEndian.Uint64(hash[:])
 }
 
 //
@@ -42,7 +42,7 @@ func GetIndexAndFingerprint(item []byte, bucketMask uint) (uint, Fingerprint) {
 	hash := GetHash(item)
 	fp := GetFingerprint(hash)
 	// Use least significant bits for deriving index.
-	i1 := uint(hash & uint32(bucketMask))
+	i1 := uint(hash & uint64(bucketMask))
 	return i1, Fingerprint(fp)
 }
 
