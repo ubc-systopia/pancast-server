@@ -9,6 +9,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"fmt"
 	"pancast-server/cuckoo"
 	"pancast-server/models"
 	"pancast-server/server-utils"
@@ -88,14 +89,18 @@ func CreateNewFilter(ephIDs [][]byte, length int) (*cuckoo.Filter, error) {
 	if err != nil {
 		log.Println(err)
 		filter, _ = cuckoo.CreateFilter(4) // dummy var
-		return filter, err
+		return filter, nil
 	}
-	return filter, err
+	return filter, nil
 }
 
 
 func CreateChunkedFilters(ephIDs [][]byte, length int) ([]*cuckoo.Filter, error) {
 	var chunks []*cuckoo.Filter
+	if length == 0 {
+		// no cuckoo filter will be created at all
+		return chunks, nil
+	}
 	for length > 0 {
 		// create a chunk
 		currentEphIDInChunk := server_utils.MAX_CHUNK_EPHID_COUNT
