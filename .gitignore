@@ -1,4 +1,4 @@
-/app
+app
 pancast.key
 pancast.cert
 .env
@@ -7,3 +7,5 @@ config/app_config.json
 pancast.csr
 ephid_list.txt
 *.txt
+*.swp
+*.swo
