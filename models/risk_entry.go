@@ -10,25 +10,36 @@ import (
 )
 
 func CreateRiskEntries(input []types.Entry, db *sql.DB) bool {
-	query := "INSERT INTO risk_entries (eph_id, location_id, time_beacon, time_dongle, beacon_id) VALUES %s AS new ON DUPLICATE KEY UPDATE time_dongle = new.time_dongle, time_beacon = new.time_beacon;"
-	values := types.ConcatEntries(input)
-	statement := fmt.Sprintf(query, values)
-	ctx := context.Background()
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		log.Println("Failed to begin transaction")
-		return false
+	for i := 0; i < len(input); i++ {
+		query :=
+      `INSERT INTO risk_entries (eph_id, location_id, time_beacon, time_dongle, beacon_id)
+       VALUES %s AS new
+       ON DUPLICATE KEY UPDATE time_dongle = new.time_dongle, time_beacon = new.time_beacon;`
+		log.Printf("PREP QUERY === %d", i)
+		log.Printf("%s", input[i])
+		values := types.ConcatEntries(input[i:i+1])
+		statement := fmt.Sprintf(query, values)
+		log.Printf("STMT %d ===\n%s", i, statement)
+		ctx := context.Background()
+		tx, err := db.BeginTx(ctx, nil)
+		if err != nil {
+			log.Println("Failed to begin transaction")
+			return false
+		}
+
+		_, err = tx.ExecContext(ctx, statement)
+		if err != nil {
+			log.Println(err)
+			_ = tx.Rollback()
+			return false
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			return false
+		}
 	}
-	_, err = tx.ExecContext(ctx, statement)
-	log.Println(err)
-	if err != nil {
-		_ = tx.Rollback()
-		return false
-	}
-	err = tx.Commit()
-	if err != nil {
-		return false
-	}
+
 	return true
 }
 
