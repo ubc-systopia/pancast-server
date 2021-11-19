@@ -190,6 +190,7 @@ func hasPermissionToUploadToRiskDatabase() bool {
 
 func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Request) {
 	rawNum := req.URL.Query().Get("chunk")
+	log.Printf("requested chunk #: %s", rawNum)
 	if rawNum != "" {
 		num, err := strconv.Atoi(rawNum)
 		if err != nil {
@@ -204,6 +205,7 @@ func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Reque
 		}
 	} else {
 		ba := routes.UpdateController(env.cf)
+		log.Printf("len of generated risk broadcast: %d", len(ba))
 		_, err := w.Write(ba)
 		if err != nil {
 			log.Println(err)
@@ -240,6 +242,7 @@ func (env *Env) TelemetryWrapper(h http.Handler) http.Handler {
 				log.Printf("Bad request, err: %d", err)
 			}
 		}
+
 		models.CreateTelemetryEntry(totalTime.String(), req.URL.Path, numEntries,
 				serverutils.GetCurrentMinuteStamp(), env.db)
 	})

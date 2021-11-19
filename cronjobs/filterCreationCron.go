@@ -92,6 +92,8 @@ func CreateNewFilter(ephIDs [][]byte, length int) (*cuckoo.Filter, error) {
 		filter, _ = cuckoo.CreateFilter(4) // dummy var
 		return filter, nil
 	}
+	log.Printf("filter created, #ephids: %d, len: %d, #buckets: %d",
+			len(ephIDs), length, numBuckets)
 	return filter, nil
 }
 
@@ -108,9 +110,12 @@ func CreateChunkedFilters(ephIDs [][]byte, length int) ([]*cuckoo.Filter, error)
 		if currentEphIDInChunk > len(ephIDs) {
 			currentEphIDInChunk = len(ephIDs)
 		}
+//		log.Printf("#ephids: %d, curr chunk: %d", len(ephIDs), currentEphIDInChunk)
 		for currentEphIDInChunk != 0 {
 			// creates a filter
 			filter, err := cuckoo.CreateFilter(server_utils.MAX_CHUNK_EPHID_COUNT / cuckoo.BUCKET_SIZE)
+//			log.Printf("#chunks required: %d",
+//					server_utils.MAX_CHUNK_EPHID_COUNT / cuckoo.BUCKET_SIZE)
 			if err != nil {
 				return nil, err
 			}

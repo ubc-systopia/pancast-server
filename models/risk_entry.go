@@ -54,12 +54,12 @@ func GetRiskEphIDs(db *sql.DB) *sql.Rows {
 		return rows
 	}
 
-	rows2, err := db.Query(statement)
-	count := 0
-	for rows2.Next() {
-		count += 1
-	}
-	log.Printf("QUERY res len: %d ===\n%s", count, statement)
+//	rows2, err := db.Query(statement)
+//	count := 0
+//	for rows2.Next() {
+//		count += 1
+//	}
+//	log.Printf("QUERY res len: %d ===\n%s", count, statement)
 
 	return rows
 }
@@ -71,7 +71,7 @@ func GetNumOfRecentRiskEphIDs(db *sql.DB) int {
 	statement := fmt.Sprintf(query, currentTime, serverutils.MINUTES_IN_14_DAYS)
 	rows, err := db.Query(statement)
 
-	log.Printf("QUERY ===\n%s", statement)
+//	log.Printf("QUERY ===\n%s", statement)
 	if err != nil {
 		log.Println(err)
 		return 0
