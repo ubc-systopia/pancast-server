@@ -189,6 +189,20 @@ func hasPermissionToUploadToRiskDatabase() bool {
 }
 
 func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Request) {
+	if (env.cf == nil) {
+		ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db,
+				env.privacyParams, env.mode)
+		log.Printf("risk broadcast len: %d", length)
+		newFilter, err := cronjobs.CreateNewFilter(ephIDs, length)
+		if (err == nil) {
+			env.cf = newFilter
+		}
+		chunks, err := cronjobs.CreateChunkedFilters(ephIDs, length)
+		if (err == nil) {
+			env.cfChunks = chunks
+		}
+	}
+
 	rawNum := req.URL.Query().Get("chunk")
 	log.Printf("requested chunk #: %s", rawNum)
 	if rawNum != "" {
