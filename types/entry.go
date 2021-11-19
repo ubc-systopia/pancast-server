@@ -1,7 +1,8 @@
 package types
 
 import (
-	"encoding/base64"
+//	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 )
 
@@ -25,10 +26,11 @@ func ConcatEntries(input []Entry) string {
 }
 
 func createEntries(input Entry) string {
-	decodedEphID, err := base64.StdEncoding.DecodeString(input.EphemeralID)
+//	decodedEphID, err := base64.StdEncoding.DecodeString(input.EphemeralID)
+	decodedEphID, err := hex.DecodeString(input.EphemeralID)
 	if err != nil {
 		decodedEphID = []byte(input.EphemeralID)
 	}
-	return fmt.Sprintf("('%s', '%d', %d, %d, %d)", decodedEphID, input.LocationID,
+	return fmt.Sprintf("(UNHEX('%x'), %d, %d, %d, %d)", decodedEphID, input.LocationID,
 		input.DongleClock, input.BeaconClock, input.BeaconID)
 }
