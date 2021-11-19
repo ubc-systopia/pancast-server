@@ -54,8 +54,9 @@ func GetRiskEphIDs(db *sql.DB) *sql.Rows {
 		return rows
 	}
 
+	rows2, err := db.Query(statement)
 	count := 0
-	for rows.Next() {
+	for rows2.Next() {
 		count += 1
 	}
 	log.Printf("QUERY res len: %d ===\n%s", count, statement)
