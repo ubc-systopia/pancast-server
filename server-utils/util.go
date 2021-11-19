@@ -44,7 +44,7 @@ func NextPowerOfTwo(num int) int {
 }
 
 func AllocateFilter(initNumBuckets int, ephIDs [][]byte) (*cuckoo.Filter, error) {
-	log.Println(initNumBuckets)
+//	log.Println(initNumBuckets)
 	if initNumBuckets > int(math.Pow(2, EXPONENT_TOO_LARGE)) {
 		return nil, errors.New("filter has grown too large")
 	}

@@ -41,6 +41,7 @@ func GenerateEphemeralIDList(db *sql.DB, params DiffprivParameters, mode []strin
 			ephIDs = append(ephIDs, ephID)
 		}
 	}
+
 	// generating a known amount of entries
 	if server_utils.StringSliceContains(mode, "CUCKOO_FIXED_ITEMS") {
 		fixedCount := 10 // 95% of 512

@@ -71,8 +71,11 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	}
 
 	// initialize filter on startup
-	ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db, env.privacyParams, env.mode)
-	newFilter, err := cronjobs.CreateNewFilter(ephIDs, length) // create filter on startup for now
+	ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db,
+			env.privacyParams, env.mode)
+
+	// create filter on startup for now
+	newFilter, err := cronjobs.CreateNewFilter(ephIDs, length)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -99,7 +102,8 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	// initialize cron job
 	c := cron.New()
 	_, err = c.AddFunc("@midnight", func() { // starts from the moment this is invoked
-		ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db, env.privacyParams, env.mode)
+		ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db,
+				env.privacyParams, env.mode)
 		newFilter, err = cronjobs.CreateNewFilter(ephIDs, length)
 		if err != nil {
 			log.Println("error updating cuckoo filter")
@@ -120,7 +124,8 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	signal.Notify(done, os.Interrupt)
 	go func() {
 		fmt.Println("Listening on address: " + serverURL)
-		if err := http.ListenAndServeTLS(serverURL, env.certificateLoc, env.privateKeyLoc, mux); err != nil {
+		if err := http.ListenAndServeTLS(serverURL, env.certificateLoc,
+				env.privateKeyLoc, mux); err != nil {
 			log.Fatal(err)
 		}
 	}()
@@ -134,7 +139,8 @@ func (env *Env) RegisterNewDeviceIndex(w http.ResponseWriter, req *http.Request)
 		return
 	}
 	deviceLocation := req.FormValue("location")
-	params, err := routes.RegisterController(deviceType, deviceLocation, env.publicKeyLoc, env.db)
+	params, err := routes.RegisterController(deviceType, deviceLocation,
+			env.publicKeyLoc, env.db)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		log.Println(err.Error())
@@ -205,7 +211,8 @@ func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Reque
 	}
 }
 
-func (env *Env) UpdateRiskAssessmentGetCountIndex(w http.ResponseWriter, req *http.Request) {
+func (env *Env) UpdateRiskAssessmentGetCountIndex(w http.ResponseWriter,
+		req *http.Request) {
 	count := routes.UpdateControllerGetCount(env.cfChunks)
 	_, err := w.Write(count)
 	if err != nil {
@@ -220,19 +227,20 @@ func (env *Env) TelemetryWrapper(h http.Handler) http.Handler {
 		recvTime := time.Now()
 		h.ServeHTTP(w, req)
 		totalTime := time.Since(recvTime)
-		log.Println("Request received")
-		log.Println("Time elapsed: " + totalTime.String())
-		log.Println("Routed for " + req.URL.Path)
+		log.Printf("[%s] req len: %d, time taken: %s",
+				req.URL.Path, len(body), totalTime.String())
+//		log.Printf("Body: %s", body)
 		numEntries := -1
 		if req.URL.Path == "/upload" {
 			input, err := routes.ConvertStringToUploadParam(body)
 			if err == nil {
 				numEntries = len(input.Entries)
-				log.Println("Number of ephemeral IDs submitted: " + strconv.Itoa(numEntries))
+				log.Printf("# ephemeral IDs submitted: %d", numEntries)
 			} else {
-				log.Println("Bad request")
+				log.Printf("Bad request, err: %d", err)
 			}
 		}
-		models.CreateTelemetryEntry(totalTime.String(), req.URL.Path, numEntries, serverutils.GetCurrentMinuteStamp(), env.db)
+		models.CreateTelemetryEntry(totalTime.String(), req.URL.Path, numEntries,
+				serverutils.GetCurrentMinuteStamp(), env.db)
 	})
 }
