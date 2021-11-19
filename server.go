@@ -104,11 +104,11 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	_, err = c.AddFunc("@midnight", func() { // starts from the moment this is invoked
 		ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db,
 				env.privacyParams, env.mode)
-		newFilter, err = cronjobs.CreateNewFilter(ephIDs, length)
+		cronnewFilter, err := cronjobs.CreateNewFilter(ephIDs, length)
 		if err != nil {
 			log.Println("error updating cuckoo filter")
 		}
-		env.cf = newFilter
+		env.cf = cronnewFilter
 		newChunks, err := cronjobs.CreateChunkedFilters(ephIDs, length)
 		if err != nil {
 			log.Fatal(err)
