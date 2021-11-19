@@ -7,10 +7,10 @@ import (
 
 type Entry struct {
 	EphemeralID string // (should be byte array, but for now its a string)
+	BeaconID    uint32
 	LocationID  uint64
-	DongleClock uint64
-	BeaconClock uint64
-	BeaconID    uint64
+	DongleClock uint32
+	BeaconClock uint32
 }
 
 func ConcatEntries(input []Entry) string {
