@@ -45,7 +45,7 @@ func CreateRiskEntries(input []types.Entry, db *sql.DB) bool {
 
 func GetRiskEphIDs(db *sql.DB) *sql.Rows {
 	currentTime := serverutils.GetCurrentMinuteStamp()
-	query := `SELECT HEX(eph_id) FROM risk_entries AS R, device AS D
+	query := `SELECT eph_id FROM risk_entries AS R, device AS D
 	WHERE D.device_id = R.beacon_id AND (%d - D.clock_init - D.clock_offset - R.time_beacon) <= %d`
 	statement := fmt.Sprintf(query,	currentTime, serverutils.MINUTES_IN_14_DAYS)
 	rows, err := db.Query(statement)

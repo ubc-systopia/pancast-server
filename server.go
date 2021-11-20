@@ -73,6 +73,7 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 	// initialize filter on startup
 	ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db,
 			env.privacyParams, env.mode)
+	log.Printf("ephID list len: %d, %d", len(ephIDs), length)
 
 	// create filter on startup for now
 	newFilter, err := cronjobs.CreateNewFilter(ephIDs, length)
