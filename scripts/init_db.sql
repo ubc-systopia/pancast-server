@@ -35,7 +35,7 @@ DROP TABLE IF EXISTS `device`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `device` (
   `device_id` int NOT NULL,
-  `secret_key` char(32) DEFAULT NULL,
+  `secret_key` blob DEFAULT NULL,
   `clock_init` int DEFAULT '0',
   `clock_offset` int DEFAULT '0',
   PRIMARY KEY (`device_id`)
@@ -51,7 +51,7 @@ DROP TABLE IF EXISTS `beacon`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `beacon` (
   `device_id` int NOT NULL,
-  `location_id` char(8) DEFAULT 'DEADBEEF',
+  `location_id` bigint DEFAULT 0,
   PRIMARY KEY (`device_id`),
   KEY `idx_beacon_location_id` (`location_id`),
   CONSTRAINT `beacon_device_id` FOREIGN KEY (`device_id`) REFERENCES `device` (`device_id`)
@@ -81,12 +81,12 @@ DROP TABLE IF EXISTS `epi_entries`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `epi_entries` (
   `eph_id` binary(15) NOT NULL,
-  `location_id` char(8) NOT NULL,
+  `location_id` bigint DEFAULT 0,
   `time_dongle` int DEFAULT '0',
   `time_beacon` int DEFAULT '0',
   `beacon_id` int NOT NULL,
-  PRIMARY KEY (`eph_id`,`location_id`,`beacon_id`),
-  KEY `epi_beacon_id_idx` (`location_id`),
+  PRIMARY KEY (`eph_id`,`beacon_id`),
+  KEY `epi_location_id_idx` (`location_id`),
   KEY `epi_beacon_id_idx1` (`beacon_id`),
   CONSTRAINT `epi_beacon_id` FOREIGN KEY (`beacon_id`) REFERENCES `beacon` (`device_id`),
   CONSTRAINT `epi_location_id` FOREIGN KEY (`location_id`) REFERENCES `beacon` (`location_id`)
@@ -102,12 +102,12 @@ DROP TABLE IF EXISTS `risk_entries`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `risk_entries` (
   `eph_id` binary(15) NOT NULL,
-  `location_id` char(8) NOT NULL,
+  `location_id` bigint DEFAULT 0,
   `time_dongle` int DEFAULT '0',
   `time_beacon` int DEFAULT '0',
   `beacon_id` int NOT NULL,
-  PRIMARY KEY (`eph_id`,`location_id`,`beacon_id`),
-  KEY `risk_beacon_id_idx` (`location_id`),
+  PRIMARY KEY (`eph_id`,`beacon_id`),
+  KEY `risk_location_id_idx` (`location_id`),
   KEY `risk_beacon_id_idx1` (`beacon_id`),
   CONSTRAINT `risk_beacon_id` FOREIGN KEY (`beacon_id`) REFERENCES `beacon` (`device_id`),
   CONSTRAINT `risk_location_id` FOREIGN KEY (`location_id`) REFERENCES `beacon` (`location_id`)
