@@ -12,7 +12,7 @@ import (
 func CreateRiskEntries(input []types.Entry, db *sql.DB) bool {
 	for i := 0; i < len(input); i++ {
 		query :=
-      `INSERT INTO risk_entries (eph_id, location_id, time_beacon, time_dongle, beacon_id)
+      `INSERT INTO risk_entries (eph_id, location_id, time_dongle, time_beacon, beacon_id)
        VALUES %s AS new
        ON DUPLICATE KEY UPDATE time_dongle = new.time_dongle, time_beacon = new.time_beacon;`
 		log.Printf("PREP QUERY === %d", i)
