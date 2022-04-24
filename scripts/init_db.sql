@@ -114,6 +114,23 @@ CREATE TABLE `risk_entries` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
+--
+-- Table structure for table `telemetry`
+--
+
+DROP TABLE IF EXISTS `telemetry`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `telemetry` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `time_taken` varchar(45) DEFAULT 0,
+  `route` varchar(45) DEFAULT '/',
+  `num_ids_submitted` int DEFAULT '0',
+  `time_stamp` int DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
 SET @@SESSION.SQL_LOG_BIN = @MYSQLDUMP_TEMP_LOG_BIN;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
