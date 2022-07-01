@@ -7,6 +7,8 @@ Controller for the /update route.
 import (
 	"encoding/binary"
 	"pancast-server/cuckoo"
+	"log"
+	"math"
 )
 
 type UpdateReturnParameters struct {
@@ -36,8 +38,11 @@ func UpdateControllerGetChunk(chunks []*cuckoo.Filter, num int) []byte {
 	if len(chunks) <= num || num < 0 || chunks[num] == nil {
 		return []byte{}
 	}
+	log.Printf("#CF chunks: %d", len(chunks))
 	length := make([]byte, 8)
-	binary.LittleEndian.PutUint64(length, uint64(len(chunks[num].Buckets))*cuckoo.FINGERPRINT_BITS*cuckoo.BUCKET_SIZE/8) // add ceil
+	// add ceil
+	binary.LittleEndian.PutUint64(length, uint64(math.Ceil(float64(
+        (uint64(len(chunks[num].Buckets))*cuckoo.FINGERPRINT_BITS*cuckoo.BUCKET_SIZE)/8))))
 	data := chunks[num].Encode()
 	payload := append(length, data...)
 	return payload
