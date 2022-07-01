@@ -30,6 +30,7 @@ func GenerateEphemeralIDList(db *sql.DB, params DiffprivParameters, mode []strin
 	if server_utils.StringSliceContains(mode, "CUCKOO_USE_DATABASE") {
 		rows := models.GetRiskEphIDs(db)
 		length += models.GetNumOfRecentRiskEphIDs(db)
+		log.Printf("Number of real ephIDs: %d", length)
 		// division by 4 is because there are 4 entries per bucket, and therefore
 		// the filter can hold 4 * baseLength entries
 		for rows.Next() {
@@ -100,6 +101,7 @@ func CreateNewFilter(ephIDs [][]byte, length int) (*cuckoo.Filter, error) {
 
 func CreateChunkedFilters(ephIDs [][]byte, length int) ([]*cuckoo.Filter, error) {
 	var chunks []*cuckoo.Filter
+	num_ephids := length
 	if length == 0 {
 		// no cuckoo filter will be created at all
 		return chunks, nil
@@ -110,10 +112,11 @@ func CreateChunkedFilters(ephIDs [][]byte, length int) ([]*cuckoo.Filter, error)
 		if currentEphIDInChunk > len(ephIDs) {
 			currentEphIDInChunk = len(ephIDs)
 		}
-//		log.Printf("#ephids: %d, curr chunk: %d", len(ephIDs), currentEphIDInChunk)
+//		log.Printf("#ephids: %d, curr chunk size: %d", len(ephIDs), currentEphIDInChunk)
 		for currentEphIDInChunk != 0 {
 			// creates a filter
-			filter, err := cuckoo.CreateFilter(server_utils.MAX_CHUNK_EPHID_COUNT / cuckoo.BUCKET_SIZE)
+			filter, err := cuckoo.CreateFilter(
+					server_utils.MAX_CHUNK_EPHID_COUNT / cuckoo.BUCKET_SIZE)
 //			log.Printf("#chunks required: %d",
 //					server_utils.MAX_CHUNK_EPHID_COUNT / cuckoo.BUCKET_SIZE)
 			if err != nil {
@@ -139,6 +142,13 @@ func CreateChunkedFilters(ephIDs [][]byte, length int) ([]*cuckoo.Filter, error)
 		}
 		length -= currentEphIDInChunk
 	}
-	log.Printf("%d chunks created\r\n", len(chunks))
+	log.Printf("#ephids: %d, bucket size: %d, max chunk size: %d max #chunks: %d, #chunks created: %d\r\n",
+			num_ephids, cuckoo.BUCKET_SIZE, server_utils.MAX_CHUNK_EPHID_COUNT,
+			server_utils.MAX_CHUNK_EPHID_COUNT/cuckoo.BUCKET_SIZE, len(chunks))
+
+	if (len(chunks) >  server_utils.MAX_CHUNK_EPHID_COUNT/cuckoo.BUCKET_SIZE) {
+	  return nil, nil
+	}
+
 	return chunks, nil
 }

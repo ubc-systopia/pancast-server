@@ -70,23 +70,28 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 		},
 	}
 
-	// initialize filter on startup
-	ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db,
-			env.privacyParams, env.mode)
-	log.Printf("ephID list len: %d, %d", len(ephIDs), length)
+	for {
+		// initialize filter on startup
+		ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db,
+				env.privacyParams, env.mode)
+		log.Printf("ephID list len: %d, %d", len(ephIDs), length)
 
-	// create filter on startup for now
-	newFilter, err := cronjobs.CreateNewFilter(ephIDs, length)
-	if err != nil {
-		log.Fatal(err)
-	}
-	env.cf = newFilter
-	chunks, err := cronjobs.CreateChunkedFilters(ephIDs, length)
-	if err != nil {
-		log.Fatal(err)
-	}
-	env.cfChunks = chunks
+		// create filter on startup for now
+		newFilter, err := cronjobs.CreateNewFilter(ephIDs, length)
+		if err != nil {
+			log.Fatal(err)
+		}
+		env.cf = newFilter
+		chunks, err := cronjobs.CreateChunkedFilters(ephIDs, length)
+		if err != nil {
+			log.Fatal(err)
+		}
 
+		if (chunks != nil) {
+			env.cfChunks = chunks
+			break
+		}
+	}
 	// initialize routes
 	mux := http.NewServeMux()
 	basicHandler := http.HandlerFunc(basic)
@@ -102,24 +107,30 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 
 	// initialize cron job
 	c := cron.New()
-	_, err = c.AddFunc("@midnight", func() { // starts from the moment this is invoked
-		ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db,
-				env.privacyParams, env.mode)
-		cronnewFilter, err := cronjobs.CreateNewFilter(ephIDs, length)
-		if err != nil {
-			log.Println("error updating cuckoo filter")
+	c.AddFunc("@midnight", func() { // starts from the moment this is invoked
+		for {
+			ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db,
+					env.privacyParams, env.mode)
+			cronnewFilter, err := cronjobs.CreateNewFilter(ephIDs, length)
+			if err != nil {
+				log.Println("error updating cuckoo filter")
+			}
+			env.cf = cronnewFilter
+			newChunks, err := cronjobs.CreateChunkedFilters(ephIDs, length)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			if (newChunks != nil) {
+				env.cfChunks = newChunks
+				break
+			}
 		}
-		env.cf = cronnewFilter
-		newChunks, err := cronjobs.CreateChunkedFilters(ephIDs, length)
-		if err != nil {
-			log.Fatal(err)
-		}
-		env.cfChunks = newChunks
 	})
 	c.Start()
-	if err != nil {
-		log.Println("error creating cron job")
-	}
+//	if err != nil {
+//		log.Println("error creating cron job")
+//	}
 	server := &http.Server{Addr: serverURL}
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt)
@@ -191,16 +202,20 @@ func hasPermissionToUploadToRiskDatabase() bool {
 
 func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Request) {
 	if (env.cf == nil) {
-		ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db,
-				env.privacyParams, env.mode)
-		log.Printf("risk broadcast len: %d", length)
-		newFilter, err := cronjobs.CreateNewFilter(ephIDs, length)
-		if (err == nil) {
-			env.cf = newFilter
-		}
-		chunks, err := cronjobs.CreateChunkedFilters(ephIDs, length)
-		if (err == nil) {
-			env.cfChunks = chunks
+		for {
+			ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db,
+					env.privacyParams, env.mode)
+			log.Printf("risk broadcast len: %d", length)
+			newFilter, err := cronjobs.CreateNewFilter(ephIDs, length)
+			if (err == nil) {
+				env.cf = newFilter
+			}
+
+			chunks, err := cronjobs.CreateChunkedFilters(ephIDs, length)
+			if (err == nil && chunks != nil) {
+				env.cfChunks = chunks
+				break
+			}
 		}
 	}
 
@@ -216,7 +231,9 @@ func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Reque
 			_, err := w.Write(ba)
 			if err != nil {
 				log.Println(err)
+				return
 			}
+			log.Printf("len of generated risk broadcast: %d", len(ba))
 		}
 	} else {
 		ba := routes.UpdateController(env.cf)
