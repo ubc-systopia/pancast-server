@@ -53,7 +53,8 @@ func RegisterController(deviceType int64, deviceLocation string, keyLoc string, 
 	output.Secret = aesKey
 
 	// compute available device ID
-	id, err := models.GetLowestAvailableDeviceID(db, deviceType)
+//	id, err := models.GetLowestAvailableDeviceID(db, deviceType)
+	id, err := models.GetNextDeviceID(db, deviceType)
 	if err != nil {
 		return RegistrationParameters{}, err
 	}

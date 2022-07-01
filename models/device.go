@@ -6,6 +6,8 @@ import (
 	"errors"
 	server_utils "pancast-server/server-utils"
 	"pancast-server/types"
+	"log"
+	"strconv"
 )
 
 type Device struct {
@@ -22,6 +24,47 @@ func CreateDevice(r types.RegistrationData, tx *sql.Tx, ctx context.Context) err
 		return err
 	}
 	return nil
+}
+
+func GetNextDeviceID(db *sql.DB, dType int64) (uint32, error) {
+  var freeArr []uint32
+  var qstring string
+
+  if (dType == server_utils.BEACON) {
+    qstring = "SELECT device_id FROM beacon ORDER BY device_id;"
+  } else {
+    qstring = "SELECT device_id FROM dongle ORDER BY device_id;"
+  }
+
+  rows, err := db.Query(qstring)
+  if (err != nil) {
+    return 0, err
+  }
+
+  for rows.Next() {
+    var candidate uint32
+    err = rows.Scan(&candidate)
+    if (err != nil) {
+      return 0, err
+    }
+
+    freeArr = append(freeArr, candidate)
+  }
+
+  if (dType == server_utils.BEACON && len(freeArr) >= server_utils.MAX_BEACON_IDS) {
+    return 0, nil
+  }
+
+  var newElem uint32
+  if (len(freeArr) <= 0) {
+    newElem = 0
+  } else {
+    lastElem := freeArr[len(freeArr)-1]
+    newElem = lastElem + 1
+  }
+  log.Println("dType: " + strconv.Itoa(int(dType)) + ", new ID: " + strconv.FormatInt(int64(newElem), 16))
+
+  return newElem, nil
 }
 
 func GetLowestAvailableDeviceID(db *sql.DB, dType int64) (uint32, error) {

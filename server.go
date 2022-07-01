@@ -7,6 +7,7 @@ package server
 import (
 	"bytes"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"github.com/robfig/cron/v3"
 	"io/ioutil"
@@ -145,12 +146,37 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 }
 
 func (env *Env) RegisterNewDeviceIndex(w http.ResponseWriter, req *http.Request) {
+  type bjson struct {
+    Type int `json: "type"`
+    Location string `json: "location"`
+  }
+
+  body, errBody := ioutil.ReadAll(req.Body)
+  log.Println("body: " + string(body))
+  if (errBody != nil) {
+    fmt.Println(errBody.Error())
+  }
+
+  var bjson_obj bjson
+  err := json.Unmarshal([]byte(body), &bjson_obj)
+  if (err != nil) {
+    fmt.Println(err.Error())
+  }
+
+  deviceType := int64(bjson_obj.Type)
+  deviceLocation := bjson_obj.Location
+  log.Println("POST deviceType: " + strconv.Itoa(int(deviceType)) + ", location: " + deviceLocation)
+
+	/*
 	deviceType, err := strconv.ParseInt(req.FormValue("type"), 10, 32)
+
 	if err != nil || !isValidType(deviceType) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	deviceLocation := req.FormValue("location")
+	*/
+
 	params, err := routes.RegisterController(deviceType, deviceLocation,
 			env.publicKeyLoc, env.db)
 	if err != nil {
