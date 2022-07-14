@@ -47,12 +47,13 @@ func CreateFilter(numBuckets int) (*Filter, error) {
 
 func (cf *Filter) Insert(item []byte) bool {
 	index, fp := GetIndexAndFingerprint(item, cf.bucketMask)
-//	log.Printf("ins %x index %3d fp %08x", item, index, fp)
 	if cf.Buckets[index].insert(fp) {
+		log.Printf("ins %x 1st index %3d fp %08x", item, index, fp)
 		return true
 	}
 	secondIndex := GetAltIndex(fp, index, cf.bucketMask)
 	if cf.Buckets[secondIndex].insert(fp) {
+		log.Printf("ins %x 2nd index %3d fp %08x", item, secondIndex, fp)
 		return true
 	}
 	// now start evicting elements from Buckets
