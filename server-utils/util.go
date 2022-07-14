@@ -53,7 +53,7 @@ func AllocateFilter(initNumBuckets int, ephIDs [][]byte) (*cuckoo.Filter, error)
 		return nil, err
 	}
 	for _, ephID := range ephIDs {
-		result := filter.Insert(ephID)
+		result, idxType, idxVal, fp := filter.Insert(ephID)
 		if !result {
 			return AllocateFilter(NextPowerOfTwo(initNumBuckets), ephIDs)
 		}

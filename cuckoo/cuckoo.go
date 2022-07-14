@@ -45,16 +45,16 @@ func CreateFilter(numBuckets int) (*Filter, error) {
 	return &Filter{Buckets: tempFilter, bucketMask: uint(numBuckets - 1)}, nil
 }
 
-func (cf *Filter) Insert(item []byte) bool {
+func (cf *Filter) Insert(item []byte) (bool, int, uint, Fingerprint) {
 	index, fp := GetIndexAndFingerprint(item, cf.bucketMask)
 	if cf.Buckets[index].insert(fp) {
-		log.Printf("ins %x 1st index %3d fp %08x", item, index, fp)
-		return true
+//		log.Printf("ins %x 1st index %3d fp %08x", item, index, fp)
+		return true, 1, index, fp
 	}
 	secondIndex := GetAltIndex(fp, index, cf.bucketMask)
 	if cf.Buckets[secondIndex].insert(fp) {
-		log.Printf("ins %x 2nd index %3d fp %08x", item, secondIndex, fp)
-		return true
+//		log.Printf("ins %x 2nd index %3d fp %08x", item, secondIndex, fp)
+		return true, 2, secondIndex, fp
 	}
 	// now start evicting elements from Buckets
 	switch rand.Intn(2) {
@@ -78,7 +78,7 @@ func (b *Bucket) insert(fp Fingerprint) bool {
 	return false
 }
 
-func (cf *Filter) reinsert(fp Fingerprint, alternateIndex uint) bool {
+func (cf *Filter) reinsert(fp Fingerprint, alternateIndex uint) (bool, int, uint, Fingerprint) {
 	toInsert := fp
 	alternateIndexOfCurrentItem := alternateIndex
 	for i := 0; i < MAX_EVICTIONS; i++ { // maximum num of evictions before filter is 'full'
@@ -87,13 +87,13 @@ func (cf *Filter) reinsert(fp Fingerprint, alternateIndex uint) bool {
 		cf.Buckets[alternateIndexOfCurrentItem].Fp[randomElementPosition] = toInsert
 		randomElementAltIndex := GetAltIndex(randomElementEvicted, alternateIndexOfCurrentItem, cf.bucketMask)
 		if cf.Buckets[randomElementAltIndex].insert(randomElementEvicted) {
-			return true
+			return true, 3, alternateIndexOfCurrentItem, toInsert
 		}
 		toInsert = randomElementEvicted
 		alternateIndexOfCurrentItem = randomElementAltIndex
 		// keep trying to evict elements
 	}
-	return false // mission failed, shuffling elements around didn't work
+	return false, 4, 9999, fp // mission failed, shuffling elements around didn't work
 }
 
 func (cf *Filter) Lookup(item []byte) bool {

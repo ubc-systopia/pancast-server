@@ -102,44 +102,78 @@ func CreateNewFilter(ephIDs [][]byte, length int) (*cuckoo.Filter, error) {
 func CreateChunkedFilters(ephIDs [][]byte, length int) ([]*cuckoo.Filter, error) {
 	var chunks []*cuckoo.Filter
 	num_ephids := length
+	var chunkId = 0
+
 	if length == 0 {
 		// no cuckoo filter will be created at all
 		return chunks, nil
 	}
+
+	type ephIDStatus struct {
+		ephID []byte
+		result bool
+		idxType int
+		idxVal uint
+		fp	cuckoo.Fingerprint
+	}
+
+	var ephIDStatusArray []ephIDStatus = nil
+	var numAttempts = 1
+
 	for length > 0 {
 		// create a chunk
 		currentEphIDInChunk := server_utils.MAX_CHUNK_EPHID_COUNT
 		if currentEphIDInChunk > len(ephIDs) {
 			currentEphIDInChunk = len(ephIDs)
 		}
-//		log.Printf("#ephids: %d, curr chunk size: %d", len(ephIDs), currentEphIDInChunk)
+
+//		startEphIDInChunk := currentEphIDInChunk
+
 		for currentEphIDInChunk != 0 {
 			// creates a filter
 			filter, err := cuckoo.CreateFilter(
 					server_utils.MAX_CHUNK_EPHID_COUNT / cuckoo.BUCKET_SIZE)
-//			log.Printf("#chunks required: %d",
-//					server_utils.MAX_CHUNK_EPHID_COUNT / cuckoo.BUCKET_SIZE)
 			if err != nil {
 				return nil, err
 			}
+
 			// tries to insert currentEphIDInChunk ephIDs
 			success := true
 			for _, ephID := range ephIDs[:currentEphIDInChunk] {
-				result := filter.Insert(ephID)
+				result, idxType, idxVal, fp := filter.Insert(ephID)
 				if !result {
+//					log.Printf("[%d] failed %d", chunkId, numAttempts)
 					success = false
+					ephIDStatusArray = nil
+					break
 				}
+				ephIDStatusArray = append(ephIDStatusArray, ephIDStatus{ephID, result, idxType, idxVal, fp})
 			}
+
 			if success {
 				// we were able to fit in this many ephemeral IDs in the filter,
 				// take out the first currentEphIDInChunk ephIDs and loop again
+				for _, es := range ephIDStatusArray {
+					log.Printf("chunk [%d/%d] #attempts: %d ephID %x idx[%d]: %d fp %08x",
+							chunkId, len(ephIDStatusArray), numAttempts, es.ephID, es.idxType, es.idxVal, es.fp)
+				}
+				ephIDStatusArray = nil
+				numAttempts = 1
+
 				ephIDs = ephIDs[currentEphIDInChunk:]
 				chunks = append(chunks, filter)
+
 				break
 			}
+
 			// failed, so we try again with 1 less ephID
+			numAttempts += 1
 			currentEphIDInChunk -= 1
 		}
+
+//		log.Printf("[%d] #ephids left: %d, curr chunk size: %d -> %d", chunkId, len(ephIDs), startEphIDInChunk, currentEphIDInChunk)
+		chunkId += 1
+
 		length -= currentEphIDInChunk
 	}
 	log.Printf("#ephids: %d, bucket size: %d, max chunk size: %d max #chunks: %d, #chunks created: %d\r\n",
