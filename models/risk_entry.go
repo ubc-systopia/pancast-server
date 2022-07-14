@@ -44,10 +44,18 @@ func CreateRiskEntries(input []types.Entry, db *sql.DB) bool {
 }
 
 func GetRiskEphIDs(db *sql.DB) *sql.Rows {
+
 	currentTime := serverutils.GetCurrentMinuteStamp()
+	log.Printf("CURRENT TIME: %d delta: %d", currentTime, currentTime - serverutils.MINUTES_IN_14_DAYS)
+
 	query := `SELECT eph_id FROM risk_entries AS R, device AS D
-	WHERE D.device_id = R.beacon_id AND (%d - D.clock_init - D.clock_offset - R.time_beacon) <= %d`
+	  WHERE D.device_id = R.beacon_id AND (%d - D.clock_offset - R.time_beacon) <= %d`
 	statement := fmt.Sprintf(query,	currentTime, serverutils.MINUTES_IN_14_DAYS)
+
+//  	query := `SELECT eph_id FROM risk_entries AS R, device AS D
+//  		WHERE D.device_id = R.beacon_id`
+//  	statement := fmt.Sprintf(query)
+
 	rows, err := db.Query(statement)
 	if err != nil {
 		log.Printf("Error obtaining risk ephemeral IDs: %s", err)
@@ -65,10 +73,16 @@ func GetRiskEphIDs(db *sql.DB) *sql.Rows {
 }
 
 func GetNumOfRecentRiskEphIDs(db *sql.DB) int {
+
 	currentTime := serverutils.GetCurrentMinuteStamp()
 	query := `SELECT COUNT(eph_id) FROM risk_entries AS R, device AS D
-	WHERE D.device_id = R.beacon_id AND (%d - D.clock_init - D.clock_offset - R.time_beacon) <= %d`
+		WHERE D.device_id = R.beacon_id AND (%d - D.clock_offset - R.time_beacon) <= %d`
 	statement := fmt.Sprintf(query, currentTime, serverutils.MINUTES_IN_14_DAYS)
+
+//  	query := `SELECT COUNT(eph_id) FROM risk_entries AS R, device AS D
+//  		WHERE D.device_id = R.beacon_id`
+//  	statement := fmt.Sprintf(query)
+
 	rows, err := db.Query(statement)
 
 //	log.Printf("QUERY ===\n%s", statement)
