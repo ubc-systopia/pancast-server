@@ -29,7 +29,7 @@ import (
 
 type Env struct {
 	db             *sql.DB
-	cf             *cuckoo.Filter
+//	cf             *cuckoo.Filter
 	cfChunks       []*cuckoo.Filter
 	mode           []string
 	certificateLoc string
@@ -57,7 +57,7 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 
 	env := &Env{
 		db:             db,
-		cf:             nil,
+//		cf:             nil,
 		cfChunks:       nil,
 		mode:           mode,
 		certificateLoc: conf.CertificateLoc,
@@ -77,12 +77,14 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 				env.privacyParams, env.mode)
 		log.Printf("ephID list len: %d, %d", len(ephIDs), length)
 
+		/*
 		// create filter on startup for now
 		newFilter, err := cronjobs.CreateNewFilter(ephIDs, length)
 		if err != nil {
 			log.Fatal(err)
 		}
 		env.cf = newFilter
+		*/
 		chunks, err := cronjobs.CreateChunkedFilters(ephIDs, length)
 		if err != nil {
 			log.Fatal(err)
@@ -112,11 +114,13 @@ func StartServer(conf config.StartParameters) (*http.Server, *Env, chan os.Signa
 		for {
 			ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db,
 					env.privacyParams, env.mode)
+			/*
 			cronnewFilter, err := cronjobs.CreateNewFilter(ephIDs, length)
 			if err != nil {
 				log.Println("error updating cuckoo filter")
 			}
 			env.cf = cronnewFilter
+			*/
 			newChunks, err := cronjobs.CreateChunkedFilters(ephIDs, length)
 			if err != nil {
 				log.Fatal(err)
@@ -227,15 +231,17 @@ func hasPermissionToUploadToRiskDatabase() bool {
 }
 
 func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Request) {
-	if (env.cf == nil) {
+	if (env.cfChunks == nil) {
 		for {
 			ephIDs, length := cronjobs.GenerateEphemeralIDList(env.db,
 					env.privacyParams, env.mode)
 			log.Printf("risk broadcast len: %d", length)
+			/*
 			newFilter, err := cronjobs.CreateNewFilter(ephIDs, length)
 			if (err == nil) {
 				env.cf = newFilter
 			}
+			*/
 
 			chunks, err := cronjobs.CreateChunkedFilters(ephIDs, length)
 			if (err == nil && chunks != nil) {
@@ -261,6 +267,7 @@ func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Reque
 			}
 			log.Printf("len of generated risk broadcast: %d", len(ba))
 		}
+	/*
 	} else {
 		ba := routes.UpdateController(env.cf)
 		log.Printf("len of generated risk broadcast: %d", len(ba))
@@ -268,6 +275,7 @@ func (env *Env) UpdateRiskAssessmentIndex(w http.ResponseWriter, req *http.Reque
 		if err != nil {
 			log.Println(err)
 		}
+	*/
 	}
 }
 
